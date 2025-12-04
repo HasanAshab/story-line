@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storyline App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>📖 Storyline</h1>
+            <button id="newStoryBtn" class="btn btn-primary">+ New Story</button>
+        </header>
+
+        <main class="main">
+            <!-- Story List View -->
+            <div id="storyListView" class="view active">
+                <div id="storyList" class="story-list"></div>
+            </div>
+
+            <!-- Story Editor View -->
+            <div id="storyEditorView" class="view">
+                <div class="editor-header">
+                    <button id="backBtn" class="btn btn-secondary">← Back</button>
+                    <button id="saveStoryBtn" class="btn btn-primary">Save</button>
+                    <button id="deleteStoryBtn" class="btn btn-danger">Delete</button>
+                </div>
+                
+                <div class="story-form">
+                    <input type="text" id="storyTitle" placeholder="Story Title" class="input-field">
+                    
+                    <div class="paragraphs-section">
+                        <div class="section-header">
+                            <h3>Paragraphs</h3>
+                            <div class="section-controls">
+                                <button id="expandAllBtn" class="btn btn-small">Expand All</button>
+                                <button id="collapseAllBtn" class="btn btn-small">Collapse All</button>
+                                <button id="addParagraphBtn" class="btn btn-small">+ Add Paragraph</button>
+                            </div>
+                        </div>
+                        <div id="paragraphsList" class="paragraphs-list"></div>
+                    </div>
+                    
+                    <div class="actions">
+                        <button id="copyStoryBtn" class="btn btn-secondary">📋 Copy Story</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

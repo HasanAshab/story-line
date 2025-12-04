@@ -34,13 +34,13 @@ class StorylineApp {
     // Sync actions
     document.getElementById('syncToCloudBtn').addEventListener('click', () => this.syncToCloud());
     document.getElementById('syncFromCloudBtn').addEventListener('click', () => this.syncFromCloud());
-    
+
     // Auto-save toggle
     document.getElementById('autoSaveToggle').addEventListener('change', (e) => {
       this.autoSaveEnabled = e.target.checked;
       this.saveAutoSavePreference();
     });
-    
+
     // Clear cache button
     document.getElementById('clearCacheBtn').addEventListener('click', () => this.clearPWACache());
   }
@@ -203,7 +203,8 @@ class StorylineApp {
       collapsed: false
     });
 
-    this.saveStories();
+    story.updatedAt = new Date().toISOString();
+    this.triggerAutoSave();
     this.renderParagraphs();
   }
 
@@ -211,14 +212,14 @@ class StorylineApp {
     const story = this.stories[this.currentStoryId];
     story.paragraphs[index].heading = heading;
     story.updatedAt = new Date().toISOString();
-    this.saveStories();
+    // Only save if auto-save is enabled, otherwise just update in memory
   }
 
   updateParagraphContent(index, content) {
     const story = this.stories[this.currentStoryId];
     story.paragraphs[index].content = content;
     story.updatedAt = new Date().toISOString();
-    this.saveStories();
+    // Only save if auto-save is enabled, otherwise just update in memory
   }
 
   deleteParagraph(index) {
@@ -226,7 +227,7 @@ class StorylineApp {
       const story = this.stories[this.currentStoryId];
       story.paragraphs.splice(index, 1);
       story.updatedAt = new Date().toISOString();
-      this.saveStories();
+      this.triggerAutoSave();
       this.renderParagraphs();
     }
   }
@@ -242,7 +243,6 @@ class StorylineApp {
     story.paragraphs[newIndex] = temp;
 
     story.updatedAt = new Date().toISOString();
-    this.saveStories();
     this.triggerAutoSave();
     this.renderParagraphs();
   }
@@ -251,7 +251,25 @@ class StorylineApp {
     const story = this.stories[this.currentStoryId];
     const title = document.getElementById('storyTitle').value.trim();
 
+    // Update title
     story.title = title || 'Untitled Story';
+
+    // Update paragraph content from current form state
+    const headingInputs = document.querySelectorAll('.paragraph-heading');
+    const contentInputs = document.querySelectorAll('.paragraph-content');
+
+    headingInputs.forEach((input, index) => {
+      if (story.paragraphs[index]) {
+        story.paragraphs[index].heading = input.value;
+      }
+    });
+
+    contentInputs.forEach((input, index) => {
+      if (story.paragraphs[index]) {
+        story.paragraphs[index].content = input.value;
+      }
+    });
+
     story.updatedAt = new Date().toISOString();
     this.saveStories();
 
@@ -359,7 +377,6 @@ class StorylineApp {
     story.paragraphs.splice(toIndex, 0, paragraph);
 
     story.updatedAt = new Date().toISOString();
-    this.saveStories();
     this.triggerAutoSave();
     this.renderParagraphs();
   }
@@ -374,7 +391,7 @@ class StorylineApp {
     const story = this.stories[this.currentStoryId];
     story.paragraphs[index].collapsed = !story.paragraphs[index].collapsed;
     story.updatedAt = new Date().toISOString();
-    this.saveStories();
+    this.triggerAutoSave();
     this.renderParagraphs();
   }
 
@@ -384,7 +401,7 @@ class StorylineApp {
       paragraph.collapsed = false;
     });
     story.updatedAt = new Date().toISOString();
-    this.saveStories();
+    this.triggerAutoSave();
     this.renderParagraphs();
   }
 
@@ -394,7 +411,7 @@ class StorylineApp {
       paragraph.collapsed = true;
     });
     story.updatedAt = new Date().toISOString();
-    this.saveStories();
+    this.triggerAutoSave();
     this.renderParagraphs();
   }
 
@@ -520,12 +537,12 @@ class StorylineApp {
 
   triggerAutoSave() {
     if (!this.autoSaveEnabled) return;
-    
+
     // Clear existing timeout
     if (this.autoSaveTimeout) {
       clearTimeout(this.autoSaveTimeout);
     }
-    
+
     // Set new timeout for 1 second after last change
     this.autoSaveTimeout = setTimeout(() => {
       this.autoSaveStory();
@@ -535,29 +552,29 @@ class StorylineApp {
   autoSaveStory() {
     const story = this.stories[this.currentStoryId];
     const title = document.getElementById('storyTitle').value.trim();
-    
+
     // Update title
     story.title = title || 'Untitled Story';
-    
+
     // Update paragraph content from current form state
     const headingInputs = document.querySelectorAll('.paragraph-heading');
     const contentInputs = document.querySelectorAll('.paragraph-content');
-    
+
     headingInputs.forEach((input, index) => {
       if (story.paragraphs[index]) {
         story.paragraphs[index].heading = input.value;
       }
     });
-    
+
     contentInputs.forEach((input, index) => {
       if (story.paragraphs[index]) {
         story.paragraphs[index].content = input.value;
       }
     });
-    
+
     story.updatedAt = new Date().toISOString();
     this.saveStories();
-    
+
     // Show subtle feedback
     const saveBtn = document.getElementById('saveStoryBtn');
     const originalText = saveBtn.textContent;
@@ -570,7 +587,7 @@ class StorylineApp {
   // Mobile drag and drop functionality
   initMobileDragAndDrop() {
     const dragHandles = document.querySelectorAll('.drag-handle');
-    
+
     dragHandles.forEach(handle => {
       handle.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
       handle.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
@@ -583,11 +600,11 @@ class StorylineApp {
     const touch = e.touches[0];
     this.touchStartY = touch.clientY;
     this.touchStartX = touch.clientX;
-    
+
     const handle = e.target;
     this.draggedElement = handle.closest('.paragraph-item');
     this.draggedElement.classList.add('dragging');
-    
+
     // Create visual feedback
     this.draggedElement.style.transform = 'scale(1.02)';
     this.draggedElement.style.zIndex = '1000';
@@ -596,22 +613,22 @@ class StorylineApp {
   handleTouchMove(e) {
     if (!this.draggedElement) return;
     e.preventDefault();
-    
+
     const touch = e.touches[0];
     const deltaY = touch.clientY - this.touchStartY;
-    
+
     // Move the element
     this.draggedElement.style.transform = `translateY(${deltaY}px) scale(1.02)`;
-    
+
     // Find the element we're hovering over
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const targetParagraph = elementBelow?.closest('.paragraph-item');
-    
+
     // Remove previous hover effects
     document.querySelectorAll('.paragraph-item').forEach(item => {
       item.classList.remove('drag-over');
     });
-    
+
     // Add hover effect to target
     if (targetParagraph && targetParagraph !== this.draggedElement) {
       targetParagraph.classList.add('drag-over');
@@ -621,31 +638,31 @@ class StorylineApp {
   handleTouchEnd(e) {
     if (!this.draggedElement) return;
     e.preventDefault();
-    
+
     const touch = e.changedTouches[0];
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const targetParagraph = elementBelow?.closest('.paragraph-item');
-    
+
     // Reset visual state
     this.draggedElement.style.transform = '';
     this.draggedElement.style.zIndex = '';
     this.draggedElement.classList.remove('dragging');
-    
+
     // Remove all hover effects
     document.querySelectorAll('.paragraph-item').forEach(item => {
       item.classList.remove('drag-over');
     });
-    
+
     // Perform reorder if we have a valid target
     if (targetParagraph && targetParagraph !== this.draggedElement) {
       const fromIndex = parseInt(this.draggedElement.dataset.index);
       const toIndex = parseInt(targetParagraph.dataset.index);
-      
+
       if (fromIndex !== toIndex) {
         this.reorderParagraphs(fromIndex, toIndex);
       }
     }
-    
+
     this.draggedElement = null;
   }
 
@@ -674,12 +691,12 @@ class StorylineApp {
 
       btn.textContent = '✓ Cache Cleared!';
       btn.style.background = '#4CAF50';
-      
+
       setTimeout(() => {
         btn.textContent = originalText;
         btn.style.background = '';
         btn.disabled = false;
-        
+
         // Show reload prompt
         if (confirm('Cache cleared successfully! Reload the app to complete the process?')) {
           window.location.reload();

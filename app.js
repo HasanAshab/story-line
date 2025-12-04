@@ -3,6 +3,11 @@ class StorylineApp {
     this.storageKey = 'storyline_app';
     this.stories = this.loadStories();
     this.currentStoryId = null;
+    this.autoSaveEnabled = false;
+    this.autoSaveTimeout = null;
+    this.touchStartY = 0;
+    this.touchStartX = 0;
+    this.draggedElement = null;
     this.init();
   }
 
@@ -29,6 +34,15 @@ class StorylineApp {
     // Sync actions
     document.getElementById('syncToCloudBtn').addEventListener('click', () => this.syncToCloud());
     document.getElementById('syncFromCloudBtn').addEventListener('click', () => this.syncFromCloud());
+    
+    // Auto-save toggle
+    document.getElementById('autoSaveToggle').addEventListener('change', (e) => {
+      this.autoSaveEnabled = e.target.checked;
+      this.saveAutoSavePreference();
+    });
+    
+    // Clear cache button
+    document.getElementById('clearCacheBtn').addEventListener('click', () => this.clearPWACache());
   }
 
   loadStories() {
@@ -128,6 +142,8 @@ class StorylineApp {
     }
 
     document.getElementById('storyTitle').value = story.title || '';
+    this.loadAutoSavePreference();
+    this.setupAutoSaveListeners();
     this.renderParagraphs();
   }
 
@@ -154,6 +170,7 @@ class StorylineApp {
                             </span>
                         </div>
                         <div class="paragraph-controls">
+                            <button class="control-btn drag-handle" data-index="${index}">⋮⋮</button>
                             <button class="control-btn" onclick="app.moveParagraph(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
                             <button class="control-btn" onclick="app.moveParagraph(${index}, 1)" ${index === story.paragraphs.length - 1 ? 'disabled' : ''}>↓</button>
                             <button class="control-btn" onclick="app.deleteParagraph(${index})">🗑️</button>
@@ -162,15 +179,18 @@ class StorylineApp {
                     <div class="paragraph-content-area" ${isCollapsed ? 'style="display: none;"' : ''}>
                         <input type="text" class="paragraph-heading" placeholder="Heading (optional)" 
                                value="${this.escapeHtml(paragraph.heading || '')}" 
-                               onchange="app.updateParagraphHeading(${index}, this.value)">
+                               onchange="app.updateParagraphHeading(${index}, this.value)"
+                               oninput="app.triggerAutoSave()">
                         <textarea class="paragraph-content" placeholder="Write your paragraph here..." 
-                                  onchange="app.updateParagraphContent(${index}, this.value)">${this.escapeHtml(paragraph.content || '')}</textarea>
+                                  onchange="app.updateParagraphContent(${index}, this.value)"
+                                  oninput="app.triggerAutoSave()">${this.escapeHtml(paragraph.content || '')}</textarea>
                     </div>
                 </div>
             `;
     }).join('');
 
     this.initDragAndDrop();
+    this.initMobileDragAndDrop();
   }
 
   addParagraph() {
@@ -223,6 +243,7 @@ class StorylineApp {
 
     story.updatedAt = new Date().toISOString();
     this.saveStories();
+    this.triggerAutoSave();
     this.renderParagraphs();
   }
 
@@ -339,6 +360,7 @@ class StorylineApp {
 
     story.updatedAt = new Date().toISOString();
     this.saveStories();
+    this.triggerAutoSave();
     this.renderParagraphs();
   }
 
@@ -474,6 +496,203 @@ class StorylineApp {
       btn.style.background = '#f44336';
       setTimeout(() => {
         btn.textContent = '📥 Sync From Cloud';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    }
+  }
+
+  // Auto-save functionality
+  saveAutoSavePreference() {
+    localStorage.setItem('storyline_autosave', this.autoSaveEnabled.toString());
+  }
+
+  loadAutoSavePreference() {
+    const saved = localStorage.getItem('storyline_autosave');
+    this.autoSaveEnabled = saved === 'true';
+    document.getElementById('autoSaveToggle').checked = this.autoSaveEnabled;
+  }
+
+  setupAutoSaveListeners() {
+    const titleInput = document.getElementById('storyTitle');
+    titleInput.addEventListener('input', () => this.triggerAutoSave());
+  }
+
+  triggerAutoSave() {
+    if (!this.autoSaveEnabled) return;
+    
+    // Clear existing timeout
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+    
+    // Set new timeout for 1 second after last change
+    this.autoSaveTimeout = setTimeout(() => {
+      this.autoSaveStory();
+    }, 1000);
+  }
+
+  autoSaveStory() {
+    const story = this.stories[this.currentStoryId];
+    const title = document.getElementById('storyTitle').value.trim();
+    
+    // Update title
+    story.title = title || 'Untitled Story';
+    
+    // Update paragraph content from current form state
+    const headingInputs = document.querySelectorAll('.paragraph-heading');
+    const contentInputs = document.querySelectorAll('.paragraph-content');
+    
+    headingInputs.forEach((input, index) => {
+      if (story.paragraphs[index]) {
+        story.paragraphs[index].heading = input.value;
+      }
+    });
+    
+    contentInputs.forEach((input, index) => {
+      if (story.paragraphs[index]) {
+        story.paragraphs[index].content = input.value;
+      }
+    });
+    
+    story.updatedAt = new Date().toISOString();
+    this.saveStories();
+    
+    // Show subtle feedback
+    const saveBtn = document.getElementById('saveStoryBtn');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '💾';
+    setTimeout(() => {
+      saveBtn.textContent = originalText;
+    }, 500);
+  }
+
+  // Mobile drag and drop functionality
+  initMobileDragAndDrop() {
+    const dragHandles = document.querySelectorAll('.drag-handle');
+    
+    dragHandles.forEach(handle => {
+      handle.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+      handle.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+      handle.addEventListener('touchend', this.handleTouchEnd.bind(this), { passive: false });
+    });
+  }
+
+  handleTouchStart(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    this.touchStartY = touch.clientY;
+    this.touchStartX = touch.clientX;
+    
+    const handle = e.target;
+    this.draggedElement = handle.closest('.paragraph-item');
+    this.draggedElement.classList.add('dragging');
+    
+    // Create visual feedback
+    this.draggedElement.style.transform = 'scale(1.02)';
+    this.draggedElement.style.zIndex = '1000';
+  }
+
+  handleTouchMove(e) {
+    if (!this.draggedElement) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const deltaY = touch.clientY - this.touchStartY;
+    
+    // Move the element
+    this.draggedElement.style.transform = `translateY(${deltaY}px) scale(1.02)`;
+    
+    // Find the element we're hovering over
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetParagraph = elementBelow?.closest('.paragraph-item');
+    
+    // Remove previous hover effects
+    document.querySelectorAll('.paragraph-item').forEach(item => {
+      item.classList.remove('drag-over');
+    });
+    
+    // Add hover effect to target
+    if (targetParagraph && targetParagraph !== this.draggedElement) {
+      targetParagraph.classList.add('drag-over');
+    }
+  }
+
+  handleTouchEnd(e) {
+    if (!this.draggedElement) return;
+    e.preventDefault();
+    
+    const touch = e.changedTouches[0];
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetParagraph = elementBelow?.closest('.paragraph-item');
+    
+    // Reset visual state
+    this.draggedElement.style.transform = '';
+    this.draggedElement.style.zIndex = '';
+    this.draggedElement.classList.remove('dragging');
+    
+    // Remove all hover effects
+    document.querySelectorAll('.paragraph-item').forEach(item => {
+      item.classList.remove('drag-over');
+    });
+    
+    // Perform reorder if we have a valid target
+    if (targetParagraph && targetParagraph !== this.draggedElement) {
+      const fromIndex = parseInt(this.draggedElement.dataset.index);
+      const toIndex = parseInt(targetParagraph.dataset.index);
+      
+      if (fromIndex !== toIndex) {
+        this.reorderParagraphs(fromIndex, toIndex);
+      }
+    }
+    
+    this.draggedElement = null;
+  }
+
+  async clearPWACache() {
+    try {
+      const btn = document.getElementById('clearCacheBtn');
+      const originalText = btn.textContent;
+      btn.textContent = '🗑️ Clearing...';
+      btn.disabled = true;
+
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+      }
+
+      // Unregister service worker
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(
+          registrations.map(registration => registration.unregister())
+        );
+      }
+
+      btn.textContent = '✓ Cache Cleared!';
+      btn.style.background = '#4CAF50';
+      
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+        
+        // Show reload prompt
+        if (confirm('Cache cleared successfully! Reload the app to complete the process?')) {
+          window.location.reload();
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error('Clear cache failed:', error);
+      const btn = document.getElementById('clearCacheBtn');
+      btn.textContent = '❌ Clear Failed';
+      btn.style.background = '#f44336';
+      setTimeout(() => {
+        btn.textContent = '🗑️ Clear Cache';
         btn.style.background = '';
         btn.disabled = false;
       }, 2000);

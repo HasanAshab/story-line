@@ -43,6 +43,7 @@
                 <div class="sync-controls">
                     <button id="syncToCloudBtn" class="btn btn-sync">☁️ Sync To Cloud</button>
                     <button id="syncFromCloudBtn" class="btn btn-sync">📥 Sync From Cloud</button>
+                    <button id="clearCacheBtn" class="btn btn-cache">⏫ Update App</button>
                 </div>
                 <div id="storyList" class="story-list"></div>
             </div>
@@ -57,6 +58,14 @@
                 
                 <div class="story-form">
                     <input type="text" id="storyTitle" placeholder="Story Title" class="input-field">
+                    
+                    <div class="auto-save-toggle">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="autoSaveToggle" class="toggle-input">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Auto Save</span>
+                        </label>
+                    </div>
                     
                     <div class="paragraphs-section">
                         <div class="section-header">

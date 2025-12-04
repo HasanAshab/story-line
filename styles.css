@@ -116,6 +116,21 @@ body {
     cursor: not-allowed;
 }
 
+.btn-cache {
+    background: #ff9800;
+    color: white;
+    flex: 1;
+}
+
+.btn-cache:hover:not(:disabled) {
+    background: #f57c00;
+}
+
+.btn-cache:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Story List */
 .story-list {
     display: grid;
@@ -180,6 +195,59 @@ body {
     outline: none;
     border-color: #2196F3;
     box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+/* Auto Save Toggle */
+.auto-save-toggle {
+    margin-bottom: 1rem;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-input {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 50px;
+    height: 24px;
+    background-color: #ccc;
+    border-radius: 24px;
+    transition: background-color 0.3s;
+    margin-right: 0.5rem;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.toggle-input:checked + .toggle-slider {
+    background-color: #2196F3;
+}
+
+.toggle-input:checked + .toggle-slider::before {
+    transform: translateX(26px);
+}
+
+.toggle-text {
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 500;
 }
 
 /* Paragraphs Section */
@@ -249,6 +317,32 @@ body {
 
 .paragraph-content-area {
     transition: all 0.3s ease;
+}
+
+/* Mobile Drag Handle */
+.drag-handle {
+    font-size: 1.2rem;
+    color: #666;
+    cursor: grab;
+    padding: 0.5rem;
+    touch-action: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+/* Enhanced Drag States */
+.paragraph-item.dragging {
+    opacity: 0.8;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-color: #2196F3;
+}
+
+.paragraph-item.drag-over {
+    border-color: #2196F3;
+    background: #e3f2fd;
+    transform: translateY(-2px);
 }
 
 .paragraph-controls {
@@ -340,6 +434,30 @@ body {
     .btn-sync {
         padding: 0.6rem 0.8rem;
         font-size: 0.85rem;
+    }
+    
+    .btn-cache {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .drag-handle {
+        font-size: 1rem;
+        padding: 0.4rem;
+    }
+    
+    .toggle-slider {
+        width: 44px;
+        height: 22px;
+    }
+    
+    .toggle-slider::before {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .toggle-input:checked + .toggle-slider::before {
+        transform: translateX(22px);
     }
 }
 

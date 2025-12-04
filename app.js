@@ -25,6 +25,10 @@ class StorylineApp {
     document.getElementById('addParagraphBtn').addEventListener('click', () => this.addParagraph());
     document.getElementById('expandAllBtn').addEventListener('click', () => this.expandAllParagraphs());
     document.getElementById('collapseAllBtn').addEventListener('click', () => this.collapseAllParagraphs());
+
+    // Sync actions
+    document.getElementById('syncToCloudBtn').addEventListener('click', () => this.syncToCloud());
+    document.getElementById('syncFromCloudBtn').addEventListener('click', () => this.syncFromCloud());
   }
 
   loadStories() {
@@ -370,6 +374,110 @@ class StorylineApp {
     story.updatedAt = new Date().toISOString();
     this.saveStories();
     this.renderParagraphs();
+  }
+
+  async syncToCloud() {
+    try {
+      const btn = document.getElementById('syncToCloudBtn');
+      const originalText = btn.textContent;
+      btn.textContent = '☁️ Syncing...';
+      btn.disabled = true;
+
+      // Wait for Firebase to be available
+      if (!window.db) {
+        throw new Error('Firebase not initialized');
+      }
+
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+
+      // Use a fixed document ID for the user's data
+      const userDocRef = doc(window.db, 'storylines', 'user_data');
+
+      await setDoc(userDocRef, {
+        stories: this.stories,
+        lastSync: new Date().toISOString()
+      });
+
+      btn.textContent = '✓ Synced to Cloud!';
+      btn.style.background = '#4CAF50';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+
+    } catch (error) {
+      console.error('Sync to cloud failed:', error);
+      const btn = document.getElementById('syncToCloudBtn');
+      btn.textContent = '❌ Sync Failed';
+      btn.style.background = '#f44336';
+      setTimeout(() => {
+        btn.textContent = '☁️ Sync To Cloud';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    }
+  }
+
+  async syncFromCloud() {
+    try {
+      const btn = document.getElementById('syncFromCloudBtn');
+      const originalText = btn.textContent;
+      btn.textContent = '📥 Syncing...';
+      btn.disabled = true;
+
+      // Wait for Firebase to be available
+      if (!window.db) {
+        throw new Error('Firebase not initialized');
+      }
+
+      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+
+      // Use a fixed document ID for the user's data
+      const userDocRef = doc(window.db, 'storylines', 'user_data');
+      const docSnap = await getDoc(userDocRef);
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.stories) {
+          // Confirm before overwriting local data
+          const confirmSync = confirm('This will replace all local stories with cloud data. Continue?');
+          if (confirmSync) {
+            this.stories = data.stories;
+            this.saveStories();
+            this.renderStoryList();
+
+            btn.textContent = '✓ Synced from Cloud!';
+            btn.style.background = '#4CAF50';
+          } else {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
+          }
+        } else {
+          throw new Error('No story data found in cloud');
+        }
+      } else {
+        throw new Error('No cloud data found');
+      }
+
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+
+    } catch (error) {
+      console.error('Sync from cloud failed:', error);
+      const btn = document.getElementById('syncFromCloudBtn');
+      btn.textContent = '❌ Sync Failed';
+      btn.style.background = '#f44336';
+      setTimeout(() => {
+        btn.textContent = '📥 Sync From Cloud';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    }
   }
 
   escapeHtml(text) {

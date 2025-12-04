@@ -7,6 +7,28 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2196F3">
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAjxr-5XZgYWKsUwPskXQc5WxzOqtR5pnY",
+            authDomain: "story-line-d2849.firebaseapp.com",
+            projectId: "story-line-d2849",
+            storageBucket: "story-line-d2849.firebasestorage.app",
+            messagingSenderId: "100849395388",
+            appId: "1:100849395388:web:8d7410c67b7206957692b9"
+        };
+        
+        const firebaseApp = initializeApp(firebaseConfig);
+        const db = getFirestore(firebaseApp);
+        
+        // Make Firebase available globally
+        window.firebaseApp = firebaseApp;
+        window.db = db;
+    </script>
 </head>
 <body>
     <div class="app">
@@ -18,6 +40,10 @@
         <main class="main">
             <!-- Story List View -->
             <div id="storyListView" class="view active">
+                <div class="sync-controls">
+                    <button id="syncToCloudBtn" class="btn btn-sync">☁️ Sync To Cloud</button>
+                    <button id="syncFromCloudBtn" class="btn btn-sync">📥 Sync From Cloud</button>
+                </div>
                 <div id="storyList" class="story-list"></div>
             </div>
 

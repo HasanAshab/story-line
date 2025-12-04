@@ -8,6 +8,7 @@ class StorylineApp {
     this.touchStartY = 0;
     this.touchStartX = 0;
     this.draggedElement = null;
+    this.loadInitialAutoSavePreference();
     this.init();
   }
 
@@ -243,7 +244,12 @@ class StorylineApp {
     story.paragraphs[newIndex] = temp;
 
     story.updatedAt = new Date().toISOString();
-    this.triggerAutoSave();
+
+    // Only save if auto-save is enabled
+    if (this.autoSaveEnabled) {
+      this.triggerAutoSave();
+    }
+
     this.renderParagraphs();
   }
 
@@ -377,7 +383,12 @@ class StorylineApp {
     story.paragraphs.splice(toIndex, 0, paragraph);
 
     story.updatedAt = new Date().toISOString();
-    this.triggerAutoSave();
+
+    // Only save if auto-save is enabled
+    if (this.autoSaveEnabled) {
+      this.triggerAutoSave();
+    }
+
     this.renderParagraphs();
   }
 
@@ -522,6 +533,11 @@ class StorylineApp {
   // Auto-save functionality
   saveAutoSavePreference() {
     localStorage.setItem('storyline_autosave', this.autoSaveEnabled.toString());
+  }
+
+  loadInitialAutoSavePreference() {
+    const saved = localStorage.getItem('storyline_autosave');
+    this.autoSaveEnabled = saved === 'true';
   }
 
   loadAutoSavePreference() {

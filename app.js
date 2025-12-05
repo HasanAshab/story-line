@@ -26,6 +26,7 @@ class StorylineApp {
     document.getElementById('saveStoryBtn').addEventListener('click', () => this.saveCurrentStory());
     document.getElementById('deleteStoryBtn').addEventListener('click', () => this.deleteCurrentStory());
     document.getElementById('copyStoryBtn').addEventListener('click', () => this.copyStoryToClipboard());
+    document.getElementById('previewBtn').addEventListener('click', () => this.showPreview());
 
     // Paragraph actions
     document.getElementById('addParagraphBtn').addEventListener('click', () => this.addParagraph());
@@ -44,6 +45,14 @@ class StorylineApp {
 
     // Clear cache button
     document.getElementById('clearCacheBtn').addEventListener('click', () => this.clearPWACache());
+
+    // Preview modal
+    document.getElementById('closePreviewBtn').addEventListener('click', () => this.closePreview());
+    document.getElementById('previewModal').addEventListener('click', (e) => {
+      if (e.target.id === 'previewModal') {
+        this.closePreview();
+      }
+    });
   }
 
   loadStories() {
@@ -183,6 +192,7 @@ class StorylineApp {
                                onchange="app.updateParagraphHeading(${index}, this.value)"
                                oninput="app.triggerAutoSave()">
                         <textarea class="paragraph-content" placeholder="Write your paragraph here..." 
+                                  spellcheck="false"
                                   onchange="app.updateParagraphContent(${index}, this.value)"
                                   oninput="app.triggerAutoSave()">${this.escapeHtml(paragraph.content || '')}</textarea>
                     </div>
@@ -789,6 +799,76 @@ class StorylineApp {
 
     // Ensure no scrollbars
     textarea.style.overflow = 'hidden';
+  }
+
+  showPreview() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) return;
+
+    // Update story data from current form state before preview
+    this.updateStoryFromForm();
+
+    const modal = document.getElementById('previewModal');
+    const titleElement = document.getElementById('previewTitle');
+    const contentElement = document.getElementById('previewContent');
+
+    titleElement.textContent = story.title || 'Untitled Story';
+
+    if (!story.paragraphs || story.paragraphs.length === 0) {
+      contentElement.innerHTML = '<div class="preview-empty">No content to preview yet.</div>';
+    } else {
+      let previewHTML = `<div class="preview-title">${this.escapeHtml(story.title || 'Untitled Story')}</div>`;
+
+      story.paragraphs.forEach((paragraph, index) => {
+        if (paragraph.content && paragraph.content.trim()) {
+          previewHTML += '<div class="preview-paragraph">';
+
+          if (paragraph.heading && paragraph.heading.trim()) {
+            previewHTML += `<div class="preview-paragraph-heading">${this.escapeHtml(paragraph.heading)}</div>`;
+          }
+
+          previewHTML += `<div class="preview-paragraph-content">${this.escapeHtml(paragraph.content).replace(/\n/g, '<br>')}</div>`;
+          previewHTML += '</div>';
+        }
+      });
+
+      contentElement.innerHTML = previewHTML;
+    }
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+  }
+
+  closePreview() {
+    const modal = document.getElementById('previewModal');
+    modal.classList.remove('active');
+    document.body.style.overflow = ''; // Restore scrolling
+  }
+
+  updateStoryFromForm() {
+    const story = this.stories[this.currentStoryId];
+    const title = document.getElementById('storyTitle').value.trim();
+
+    // Update title
+    story.title = title || 'Untitled Story';
+
+    // Update paragraph content from current form state
+    const headingInputs = document.querySelectorAll('.paragraph-heading');
+    const contentInputs = document.querySelectorAll('.paragraph-content');
+
+    headingInputs.forEach((input, index) => {
+      if (story.paragraphs[index]) {
+        story.paragraphs[index].heading = input.value;
+      }
+    });
+
+    contentInputs.forEach((input, index) => {
+      if (story.paragraphs[index]) {
+        story.paragraphs[index].content = input.value;
+      }
+    });
+
+    story.updatedAt = new Date().toISOString();
   }
 
   escapeHtml(text) {

@@ -27,6 +27,7 @@ class StorylineApp {
     document.getElementById('deleteStoryBtn').addEventListener('click', () => this.deleteCurrentStory());
     document.getElementById('copyStoryBtn').addEventListener('click', () => this.copyStoryToClipboard());
     document.getElementById('previewBtn').addEventListener('click', () => this.showPreview());
+    document.getElementById('editBtn').addEventListener('click', () => this.showEdit());
 
     // Paragraph actions
     document.getElementById('addParagraphBtn').addEventListener('click', () => this.addParagraph());
@@ -45,14 +46,6 @@ class StorylineApp {
 
     // Clear cache button
     document.getElementById('clearCacheBtn').addEventListener('click', () => this.clearPWACache());
-
-    // Preview modal
-    document.getElementById('closePreviewBtn').addEventListener('click', () => this.closePreview());
-    document.getElementById('previewModal').addEventListener('click', (e) => {
-      if (e.target.id === 'previewModal') {
-        this.closePreview();
-      }
-    });
   }
 
   loadStories() {
@@ -814,11 +807,11 @@ class StorylineApp {
     // Update story data from current form state before preview
     this.updateStoryFromForm();
 
-    const modal = document.getElementById('previewModal');
-    const titleElement = document.getElementById('previewTitle');
+    const editMode = document.getElementById('editMode');
+    const previewMode = document.getElementById('previewMode');
+    const previewBtn = document.getElementById('previewBtn');
+    const editBtn = document.getElementById('editBtn');
     const contentElement = document.getElementById('previewContent');
-
-    titleElement.textContent = story.title || 'Untitled Story';
 
     if (!story.paragraphs || story.paragraphs.length === 0) {
       contentElement.innerHTML = '<div class="preview-empty">No content to preview yet.</div>';
@@ -841,14 +834,24 @@ class StorylineApp {
       contentElement.innerHTML = previewHTML;
     }
 
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    // Switch to preview mode
+    editMode.style.display = 'none';
+    previewMode.style.display = 'block';
+    previewBtn.style.display = 'none';
+    editBtn.style.display = 'inline-block';
   }
 
-  closePreview() {
-    const modal = document.getElementById('previewModal');
-    modal.classList.remove('active');
-    document.body.style.overflow = ''; // Restore scrolling
+  showEdit() {
+    const editMode = document.getElementById('editMode');
+    const previewMode = document.getElementById('previewMode');
+    const previewBtn = document.getElementById('previewBtn');
+    const editBtn = document.getElementById('editBtn');
+
+    // Switch to edit mode
+    editMode.style.display = 'block';
+    previewMode.style.display = 'none';
+    previewBtn.style.display = 'inline-block';
+    editBtn.style.display = 'none';
   }
 
   updateStoryFromForm() {

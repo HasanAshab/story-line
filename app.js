@@ -452,6 +452,12 @@ class StorylineApp {
   }
 
   async syncToCloud() {
+    // Ask for confirmation before syncing
+    const confirmSync = confirm('This will upload all your local stories to the cloud and overwrite any existing cloud data. Continue?');
+    if (!confirmSync) {
+      return;
+    }
+
     try {
       const btn = document.getElementById('syncToCloudBtn');
       const originalText = btn.textContent;

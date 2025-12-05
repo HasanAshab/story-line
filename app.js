@@ -192,6 +192,7 @@ class StorylineApp {
 
     this.initDragAndDrop();
     this.initMobileDragAndDrop();
+    this.initAutoResize();
   }
 
   addParagraph() {
@@ -730,6 +731,36 @@ class StorylineApp {
         btn.disabled = false;
       }, 2000);
     }
+  }
+
+  initAutoResize() {
+    const textareas = document.querySelectorAll('.paragraph-content');
+
+    textareas.forEach(textarea => {
+      // Set initial height
+      this.autoResizeTextarea(textarea);
+
+      // Add event listeners for auto-resize
+      textarea.addEventListener('input', () => {
+        this.autoResizeTextarea(textarea);
+      });
+
+      textarea.addEventListener('change', () => {
+        this.autoResizeTextarea(textarea);
+      });
+    });
+  }
+
+  autoResizeTextarea(textarea) {
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+
+    // Set height to scrollHeight to fit content
+    const newHeight = Math.max(120, textarea.scrollHeight);
+    textarea.style.height = newHeight + 'px';
+
+    // Ensure no scrollbars
+    textarea.style.overflow = 'hidden';
   }
 
   escapeHtml(text) {

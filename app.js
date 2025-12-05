@@ -379,13 +379,27 @@ class StorylineApp {
   }
 
   reorderParagraphs(fromIndex, toIndex) {
+    console.log('Reordering paragraphs:', fromIndex, '->', toIndex); // Debug log
+
     const story = this.stories[this.currentStoryId];
+
+    // Validate indices
+    if (fromIndex < 0 || fromIndex >= story.paragraphs.length ||
+      toIndex < 0 || toIndex >= story.paragraphs.length) {
+      console.error('Invalid indices for reorder:', fromIndex, toIndex, 'length:', story.paragraphs.length);
+      return;
+    }
+
+    // Perform the reorder
     const paragraph = story.paragraphs.splice(fromIndex, 1)[0];
     story.paragraphs.splice(toIndex, 0, paragraph);
 
     story.updatedAt = new Date().toISOString();
 
-    // Only save if auto-save is enabled
+    // Always save the reorder immediately to ensure it persists
+    this.saveStories();
+
+    // Also trigger auto-save if enabled
     if (this.autoSaveEnabled) {
       this.triggerAutoSave();
     }
@@ -637,9 +651,15 @@ class StorylineApp {
     // Move the element
     this.draggedElement.style.transform = `translateY(${deltaY}px) scale(1.02)`;
 
+    // Temporarily hide the dragged element to get accurate elementFromPoint
+    this.draggedElement.style.pointerEvents = 'none';
+
     // Find the element we're hovering over
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const targetParagraph = elementBelow?.closest('.paragraph-item');
+
+    // Restore pointer events
+    this.draggedElement.style.pointerEvents = '';
 
     // Remove previous hover effects
     document.querySelectorAll('.paragraph-item').forEach(item => {
@@ -657,8 +677,12 @@ class StorylineApp {
     e.preventDefault();
 
     const touch = e.changedTouches[0];
+
+    // Temporarily hide the dragged element to get accurate elementFromPoint
+    this.draggedElement.style.pointerEvents = 'none';
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const targetParagraph = elementBelow?.closest('.paragraph-item');
+    this.draggedElement.style.pointerEvents = '';
 
     // Reset visual state
     this.draggedElement.style.transform = '';
@@ -672,10 +696,14 @@ class StorylineApp {
 
     // Perform reorder if we have a valid target
     if (targetParagraph && targetParagraph !== this.draggedElement) {
-      const fromIndex = parseInt(this.draggedElement.dataset.index);
-      const toIndex = parseInt(targetParagraph.dataset.index);
+      // Get fresh indices from the DOM to ensure accuracy
+      const allParagraphs = Array.from(document.querySelectorAll('.paragraph-item'));
+      const fromIndex = allParagraphs.indexOf(this.draggedElement);
+      const toIndex = allParagraphs.indexOf(targetParagraph);
 
-      if (fromIndex !== toIndex) {
+      console.log('Mobile drag: from', fromIndex, 'to', toIndex); // Debug log
+
+      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
         this.reorderParagraphs(fromIndex, toIndex);
       }
     }

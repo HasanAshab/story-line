@@ -64,6 +64,7 @@
           <button id="backBtn" class="btn btn-secondary">← Back</button>
           <button id="previewBtn" class="btn btn-secondary">👁️ Preview</button>
           <button id="editBtn" class="btn btn-secondary" style="display: none;">✏️ Edit</button>
+          <button id="notesBtn" class="btn btn-secondary">📝 Notes</button>
           <button id="saveStoryBtn" class="btn btn-primary">Save</button>
           <button id="deleteStoryBtn" class="btn btn-danger">Delete</button>
         </div>
@@ -116,7 +117,37 @@
     </main>
   </div>
 
+  <!-- Notes Modal -->
+  <div id="notesModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📝 Story Notes</h2>
+        <button id="closeNotesBtn" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="notesContent" class="notes-content"></div>
+      </div>
+    </div>
+  </div>
 
+  <!-- Paragraph Note Modal -->
+  <div id="paragraphNoteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="noteModalTitle">📝 Paragraph Notes</h2>
+        <button id="closeParagraphNoteBtn" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="note-form">
+          <textarea id="noteTextarea" placeholder="Add your notes for this paragraph..." class="note-textarea"></textarea>
+          <div class="note-actions">
+            <button id="saveNoteBtn" class="btn btn-primary">Save Note</button>
+            <button id="deleteNoteBtn" class="btn btn-danger" style="display: none;">Delete Note</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

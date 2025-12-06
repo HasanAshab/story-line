@@ -30,6 +30,7 @@ class StorylineApp {
     document.getElementById('copyStoryBtn').addEventListener('click', () => this.copyStoryToClipboard());
     document.getElementById('previewBtn').addEventListener('click', () => this.showPreview());
     document.getElementById('editBtn').addEventListener('click', () => this.showEdit());
+    document.getElementById('notesBtn').addEventListener('click', () => this.showNotesModal());
 
     // Paragraph actions
     document.getElementById('addParagraphBtn').addEventListener('click', () => this.addParagraph());
@@ -56,6 +57,24 @@ class StorylineApp {
     // Paragraph search functionality
     document.getElementById('paragraphSearchInput').addEventListener('input', (e) => this.handleParagraphSearch(e.target.value));
     document.getElementById('clearParagraphSearchBtn').addEventListener('click', () => this.clearParagraphSearch());
+
+    // Notes modal functionality
+    document.getElementById('closeNotesBtn').addEventListener('click', () => this.closeNotesModal());
+    document.getElementById('notesModal').addEventListener('click', (e) => {
+      if (e.target.id === 'notesModal') {
+        this.closeNotesModal();
+      }
+    });
+
+    // Paragraph note modal functionality
+    document.getElementById('closeParagraphNoteBtn').addEventListener('click', () => this.closeParagraphNoteModal());
+    document.getElementById('paragraphNoteModal').addEventListener('click', (e) => {
+      if (e.target.id === 'paragraphNoteModal') {
+        this.closeParagraphNoteModal();
+      }
+    });
+    document.getElementById('saveNoteBtn').addEventListener('click', () => this.saveParagraphNote());
+    document.getElementById('deleteNoteBtn').addEventListener('click', () => this.deleteParagraphNote());
   }
 
   loadStories() {
@@ -174,6 +193,7 @@ class StorylineApp {
                             <button class="control-btn drag-handle" data-index="${index}">⋮⋮</button>
                             <button class="control-btn" onclick="app.moveParagraph(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
                             <button class="control-btn" onclick="app.moveParagraph(${index}, 1)" ${index === story.paragraphs.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="control-btn ${paragraph.notes && paragraph.notes.length > 0 ? 'has-notes' : ''}" onclick="app.showParagraphNoteModal(${index})" title="Add/Edit Notes">📝</button>
                             <button class="control-btn" onclick="app.deleteParagraph(${index})">🗑️</button>
                         </div>
                     </div>
@@ -1116,6 +1136,115 @@ class StorylineApp {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // Notes functionality
+  showNotesModal() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) return;
+
+    const notesContent = document.getElementById('notesContent');
+    let notesHTML = '';
+
+    if (!story.paragraphs || story.paragraphs.length === 0) {
+      notesHTML = '<div class="notes-empty">No paragraphs with notes yet.</div>';
+    } else {
+      const paragraphsWithNotes = story.paragraphs.filter((p, index) => p.notes && p.notes.length > 0);
+      
+      if (paragraphsWithNotes.length === 0) {
+        notesHTML = '<div class="notes-empty">No notes added yet. Click the 📝 button on any paragraph to add notes.</div>';
+      } else {
+        notesHTML = paragraphsWithNotes.map((paragraph, originalIndex) => {
+          // Find the actual index in the story
+          const actualIndex = story.paragraphs.findIndex(p => p === paragraph);
+          const displayHeading = paragraph.heading || this.getAutoHeading(paragraph.content);
+          
+          return `
+            <div class="note-summary">
+              <div class="note-paragraph-title">
+                <strong>Paragraph ${actualIndex + 1}: ${this.escapeHtml(displayHeading)}</strong>
+              </div>
+              <div class="note-content">
+                ${paragraph.notes.map(note => `<div class="note-item">${this.escapeHtml(note).replace(/\n/g, '<br>')}</div>`).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    notesContent.innerHTML = notesHTML;
+    document.getElementById('notesModal').style.display = 'flex';
+  }
+
+  closeNotesModal() {
+    document.getElementById('notesModal').style.display = 'none';
+  }
+
+  showParagraphNoteModal(paragraphIndex) {
+    this.currentNoteIndex = paragraphIndex;
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[paragraphIndex];
+    
+    // Set modal title
+    const displayHeading = paragraph.heading || this.getAutoHeading(paragraph.content);
+    document.getElementById('noteModalTitle').textContent = `📝 Notes for: ${displayHeading}`;
+    
+    // Load existing notes
+    const noteTextarea = document.getElementById('noteTextarea');
+    const deleteBtn = document.getElementById('deleteNoteBtn');
+    
+    if (paragraph.notes && paragraph.notes.length > 0) {
+      noteTextarea.value = paragraph.notes.join('\n\n---\n\n');
+      deleteBtn.style.display = 'inline-block';
+    } else {
+      noteTextarea.value = '';
+      deleteBtn.style.display = 'none';
+    }
+    
+    document.getElementById('paragraphNoteModal').style.display = 'flex';
+    noteTextarea.focus();
+  }
+
+  closeParagraphNoteModal() {
+    document.getElementById('paragraphNoteModal').style.display = 'none';
+    this.currentNoteIndex = null;
+  }
+
+  saveParagraphNote() {
+    if (this.currentNoteIndex === null) return;
+    
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[this.currentNoteIndex];
+    const noteText = document.getElementById('noteTextarea').value.trim();
+    
+    if (noteText) {
+      // Split by separator to handle multiple notes
+      const notes = noteText.split('\n\n---\n\n').map(note => note.trim()).filter(note => note);
+      paragraph.notes = notes;
+    } else {
+      paragraph.notes = [];
+    }
+    
+    story.updatedAt = new Date().toISOString();
+    this.triggerAutoSave();
+    this.closeParagraphNoteModal();
+    this.renderParagraphs(); // Re-render to update note indicators
+  }
+
+  deleteParagraphNote() {
+    if (this.currentNoteIndex === null) return;
+    
+    if (confirm('Delete all notes for this paragraph?')) {
+      const story = this.stories[this.currentStoryId];
+      const paragraph = story.paragraphs[this.currentNoteIndex];
+      paragraph.notes = [];
+      
+      story.updatedAt = new Date().toISOString();
+      this.triggerAutoSave();
+      this.closeParagraphNoteModal();
+      this.renderParagraphs(); // Re-render to update note indicators
+    }
   }
 }
 

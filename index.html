@@ -138,11 +138,14 @@
         <button id="closeParagraphNoteBtn" class="modal-close">×</button>
       </div>
       <div class="modal-body">
-        <div class="note-form">
-          <textarea id="noteTextarea" placeholder="Add your notes for this paragraph..." class="note-textarea"></textarea>
+        <div class="notes-list" id="notesList">
+          <!-- Individual notes will be rendered here -->
+        </div>
+        <div class="add-note-section">
+          <textarea id="newNoteTextarea" placeholder="Add a new note..." class="note-textarea"></textarea>
           <div class="note-actions">
-            <button id="saveNoteBtn" class="btn btn-primary">Save Note</button>
-            <button id="deleteNoteBtn" class="btn btn-danger" style="display: none;">Delete Note</button>
+            <button id="addNoteBtn" class="btn btn-primary">Add Note</button>
+            <button id="cancelNoteBtn" class="btn btn-secondary" style="display: none;">Cancel</button>
           </div>
         </div>
       </div>

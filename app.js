@@ -73,8 +73,8 @@ class StorylineApp {
         this.closeParagraphNoteModal();
       }
     });
-    document.getElementById('saveNoteBtn').addEventListener('click', () => this.saveParagraphNote());
-    document.getElementById('deleteNoteBtn').addEventListener('click', () => this.deleteParagraphNote());
+    document.getElementById('addNoteBtn').addEventListener('click', () => this.addNewNote());
+    document.getElementById('cancelNoteBtn').addEventListener('click', () => this.cancelNewNote());
   }
 
   loadStories() {
@@ -1190,20 +1190,19 @@ class StorylineApp {
     const displayHeading = paragraph.heading || this.getAutoHeading(paragraph.content);
     document.getElementById('noteModalTitle').textContent = `📝 Notes for: ${displayHeading}`;
     
-    // Load existing notes
-    const noteTextarea = document.getElementById('noteTextarea');
-    const deleteBtn = document.getElementById('deleteNoteBtn');
-    
-    if (paragraph.notes && paragraph.notes.length > 0) {
-      noteTextarea.value = paragraph.notes.join('\n\n---\n\n');
-      deleteBtn.style.display = 'inline-block';
-    } else {
-      noteTextarea.value = '';
-      deleteBtn.style.display = 'none';
+    // Initialize notes array if it doesn't exist
+    if (!paragraph.notes) {
+      paragraph.notes = [];
     }
     
+    // Render existing notes
+    this.renderParagraphNotes();
+    
+    // Clear the new note textarea
+    document.getElementById('newNoteTextarea').value = '';
+    
     document.getElementById('paragraphNoteModal').style.display = 'flex';
-    noteTextarea.focus();
+    document.getElementById('newNoteTextarea').focus();
   }
 
   closeParagraphNoteModal() {
@@ -1211,39 +1210,112 @@ class StorylineApp {
     this.currentNoteIndex = null;
   }
 
-  saveParagraphNote() {
-    if (this.currentNoteIndex === null) return;
+  renderParagraphNotes() {
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[this.currentNoteIndex];
+    const notesList = document.getElementById('notesList');
+    
+    if (!paragraph.notes || paragraph.notes.length === 0) {
+      notesList.innerHTML = '<div class="no-notes">No notes yet. Add your first note below.</div>';
+      return;
+    }
+    
+    notesList.innerHTML = paragraph.notes.map((note, noteIndex) => `
+      <div class="individual-note">
+        <div class="note-content">${this.escapeHtml(note).replace(/\n/g, '<br>')}</div>
+        <div class="note-controls">
+          <button class="note-edit-btn" onclick="app.editNote(${noteIndex})">✏️</button>
+          <button class="note-delete-btn" onclick="app.deleteNote(${noteIndex})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  addNewNote() {
+    const noteText = document.getElementById('newNoteTextarea').value.trim();
+    if (!noteText) return;
     
     const story = this.stories[this.currentStoryId];
     const paragraph = story.paragraphs[this.currentNoteIndex];
-    const noteText = document.getElementById('noteTextarea').value.trim();
     
-    if (noteText) {
-      // Split by separator to handle multiple notes
-      const notes = noteText.split('\n\n---\n\n').map(note => note.trim()).filter(note => note);
-      paragraph.notes = notes;
-    } else {
+    if (!paragraph.notes) {
       paragraph.notes = [];
     }
     
+    paragraph.notes.push(noteText);
+    
     story.updatedAt = new Date().toISOString();
     this.triggerAutoSave();
-    this.closeParagraphNoteModal();
-    this.renderParagraphs(); // Re-render to update note indicators
+    
+    // Clear the textarea and re-render
+    document.getElementById('newNoteTextarea').value = '';
+    this.renderParagraphNotes();
+    this.renderParagraphs(); // Update note indicators
   }
 
-  deleteParagraphNote() {
-    if (this.currentNoteIndex === null) return;
+  cancelNewNote() {
+    document.getElementById('newNoteTextarea').value = '';
+  }
+
+  editNote(noteIndex) {
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[this.currentNoteIndex];
+    const note = paragraph.notes[noteIndex];
     
-    if (confirm('Delete all notes for this paragraph?')) {
+    // Replace the note display with an editable textarea
+    const notesList = document.getElementById('notesList');
+    const noteElements = notesList.querySelectorAll('.individual-note');
+    const noteElement = noteElements[noteIndex];
+    
+    noteElement.innerHTML = `
+      <textarea class="edit-note-textarea">${this.escapeHtml(note)}</textarea>
+      <div class="note-controls">
+        <button class="note-save-btn" onclick="app.saveEditedNote(${noteIndex})">💾</button>
+        <button class="note-cancel-btn" onclick="app.cancelEditNote(${noteIndex})">❌</button>
+      </div>
+    `;
+    
+    // Focus and select the textarea
+    const textarea = noteElement.querySelector('.edit-note-textarea');
+    textarea.focus();
+    textarea.select();
+  }
+
+  saveEditedNote(noteIndex) {
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[this.currentNoteIndex];
+    
+    const notesList = document.getElementById('notesList');
+    const noteElements = notesList.querySelectorAll('.individual-note');
+    const noteElement = noteElements[noteIndex];
+    const textarea = noteElement.querySelector('.edit-note-textarea');
+    
+    const newText = textarea.value.trim();
+    if (newText) {
+      paragraph.notes[noteIndex] = newText;
+      story.updatedAt = new Date().toISOString();
+      this.triggerAutoSave();
+    }
+    
+    this.renderParagraphNotes();
+  }
+
+  cancelEditNote(noteIndex) {
+    this.renderParagraphNotes();
+  }
+
+  deleteNote(noteIndex) {
+    if (confirm('Delete this note?')) {
       const story = this.stories[this.currentStoryId];
       const paragraph = story.paragraphs[this.currentNoteIndex];
-      paragraph.notes = [];
+      
+      paragraph.notes.splice(noteIndex, 1);
       
       story.updatedAt = new Date().toISOString();
       this.triggerAutoSave();
-      this.closeParagraphNoteModal();
-      this.renderParagraphs(); // Re-render to update note indicators
+      
+      this.renderParagraphNotes();
+      this.renderParagraphs(); // Update note indicators
     }
   }
 }

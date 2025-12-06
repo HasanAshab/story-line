@@ -80,7 +80,16 @@ class StorylineApp {
 
   loadStories() {
     const stored = localStorage.getItem(this.storageKey);
-    return stored ? JSON.parse(stored) : {};
+    const stories = stored ? JSON.parse(stored) : {};
+    
+    // Ensure all stories have the lastSyncAt field
+    Object.values(stories).forEach(story => {
+      if (!story.hasOwnProperty('lastSyncAt')) {
+        story.lastSyncAt = null;
+      }
+    });
+    
+    return stories;
   }
 
   saveStories() {
@@ -133,12 +142,14 @@ class StorylineApp {
 
   createNewStory() {
     const id = this.generateId();
+    const now = new Date().toISOString();
     this.stories[id] = {
       id,
       title: '',
       paragraphs: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: now,
+      updatedAt: now,
+      lastSyncAt: null
     };
     this.saveStories();
     this.showStoryEditor(id);
@@ -462,8 +473,8 @@ class StorylineApp {
   }
 
   async syncToCloud() {
-    // Ask for confirmation before syncing
-    const confirmSync = confirm('This will upload all your local stories to the cloud and overwrite any existing cloud data. Continue?');
+    // First confirmation
+    const confirmSync = confirm('This will upload your local stories to the cloud. Continue?');
     if (!confirmSync) {
       return;
     }
@@ -471,7 +482,7 @@ class StorylineApp {
     try {
       const btn = document.getElementById('syncToCloudBtn');
       const originalText = btn.textContent;
-      btn.textContent = '☁️ Syncing...';
+      btn.textContent = '☁️ Checking...';
       btn.disabled = true;
 
       // Wait for Firebase to be available
@@ -479,15 +490,61 @@ class StorylineApp {
         throw new Error('Firebase not initialized');
       }
 
-      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
-
-      // Use a fixed document ID for the user's data
+      const { doc, getDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
       const userDocRef = doc(window.db, 'storylines', 'user_data');
+
+      // Check existing cloud data first
+      const docSnap = await getDoc(userDocRef);
+      let cloudStories = {};
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        cloudStories = data.stories || {};
+      }
+
+      // Compare local vs cloud data
+      const conflicts = this.compareStoriesForUpload(this.stories, cloudStories);
+      
+      if (conflicts.length > 0) {
+        let warningMessage = 'WARNING: Potential data loss detected!\n\n';
+        warningMessage += 'The following cloud stories are newer or longer than your local versions:\n\n';
+        
+        conflicts.forEach(conflict => {
+          warningMessage += `• "${conflict.title}"\n`;
+          if (conflict.dateConflict) {
+            warningMessage += `  - Cloud version is newer (${new Date(conflict.cloudDate).toLocaleString()})\n`;
+          }
+          if (conflict.lengthConflict) {
+            warningMessage += `  - Cloud version is longer (${conflict.cloudLength} vs ${conflict.localLength} characters)\n`;
+          }
+          warningMessage += '\n';
+        });
+        
+        warningMessage += 'Uploading will overwrite these cloud stories with your local versions.\n\n';
+        warningMessage += 'Do you still want to proceed?';
+        
+        const proceedAnyway = confirm(warningMessage);
+        if (!proceedAnyway) {
+          btn.textContent = originalText;
+          btn.disabled = false;
+          return;
+        }
+      }
+
+      // Proceed with upload
+      btn.textContent = '☁️ Uploading...';
+      
+      // Update timestamps for all stories being uploaded
+      Object.values(this.stories).forEach(story => {
+        story.lastSyncAt = new Date().toISOString();
+      });
 
       await setDoc(userDocRef, {
         stories: this.stories,
         lastSync: new Date().toISOString()
       });
+
+      this.saveStories(); // Save the updated timestamps locally
 
       btn.textContent = '✓ Synced to Cloud!';
       btn.style.background = '#4CAF50';
@@ -511,10 +568,16 @@ class StorylineApp {
   }
 
   async syncFromCloud() {
+    // First confirmation
+    const confirmSync = confirm('This will download stories from the cloud. Continue?');
+    if (!confirmSync) {
+      return;
+    }
+
     try {
       const btn = document.getElementById('syncFromCloudBtn');
       const originalText = btn.textContent;
-      btn.textContent = '📥 Syncing...';
+      btn.textContent = '📥 Checking...';
       btn.disabled = true;
 
       // Wait for Firebase to be available
@@ -528,29 +591,60 @@ class StorylineApp {
       const userDocRef = doc(window.db, 'storylines', 'user_data');
       const docSnap = await getDoc(userDocRef);
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.stories) {
-          // Confirm before overwriting local data
-          const confirmSync = confirm('This will replace all local stories with cloud data. Continue?');
-          if (confirmSync) {
-            this.stories = data.stories;
-            this.saveStories();
-            this.renderStoryList();
-
-            btn.textContent = '✓ Synced from Cloud!';
-            btn.style.background = '#4CAF50';
-          } else {
-            btn.textContent = originalText;
-            btn.disabled = false;
-            return;
-          }
-        } else {
-          throw new Error('No story data found in cloud');
-        }
-      } else {
+      if (!docSnap.exists()) {
         throw new Error('No cloud data found');
       }
+
+      const data = docSnap.data();
+      if (!data.stories) {
+        throw new Error('No story data found in cloud');
+      }
+
+      const cloudStories = data.stories;
+
+      // Compare cloud vs local data
+      const conflicts = this.compareStoriesForDownload(cloudStories, this.stories);
+      
+      if (conflicts.length > 0) {
+        let warningMessage = 'WARNING: Potential data loss detected!\n\n';
+        warningMessage += 'The following local stories are newer or longer than their cloud versions:\n\n';
+        
+        conflicts.forEach(conflict => {
+          warningMessage += `• "${conflict.title}"\n`;
+          if (conflict.dateConflict) {
+            warningMessage += `  - Local version is newer (${new Date(conflict.localDate).toLocaleString()})\n`;
+          }
+          if (conflict.lengthConflict) {
+            warningMessage += `  - Local version is longer (${conflict.localLength} vs ${conflict.cloudLength} characters)\n`;
+          }
+          warningMessage += '\n';
+        });
+        
+        warningMessage += 'Downloading will overwrite these local stories with cloud versions.\n\n';
+        warningMessage += 'Do you still want to proceed?';
+        
+        const proceedAnyway = confirm(warningMessage);
+        if (!proceedAnyway) {
+          btn.textContent = originalText;
+          btn.disabled = false;
+          return;
+        }
+      }
+
+      // Proceed with download
+      btn.textContent = '📥 Downloading...';
+      
+      // Update timestamps for all stories being downloaded
+      Object.values(cloudStories).forEach(story => {
+        story.lastSyncAt = new Date().toISOString();
+      });
+
+      this.stories = cloudStories;
+      this.saveStories();
+      this.renderStoryList();
+
+      btn.textContent = '✓ Synced from Cloud!';
+      btn.style.background = '#4CAF50';
 
       setTimeout(() => {
         btn.textContent = originalText;
@@ -1164,6 +1258,93 @@ class StorylineApp {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // Helper function to calculate total character length of a story
+  getStoryCharacterLength(story) {
+    if (!story.paragraphs || story.paragraphs.length === 0) {
+      return 0;
+    }
+    
+    return story.paragraphs.reduce((total, paragraph) => {
+      const headingLength = paragraph.heading ? paragraph.heading.length : 0;
+      const contentLength = paragraph.content ? paragraph.content.length : 0;
+      return total + headingLength + contentLength;
+    }, 0);
+  }
+
+  // Compare stories for upload conflicts (local vs cloud)
+  compareStoriesForUpload(localStories, cloudStories) {
+    const conflicts = [];
+    
+    Object.keys(localStories).forEach(storyId => {
+      const localStory = localStories[storyId];
+      const cloudStory = cloudStories[storyId];
+      
+      if (!cloudStory) {
+        return; // New story, no conflict
+      }
+      
+      const localDate = new Date(localStory.updatedAt || localStory.createdAt);
+      const cloudDate = new Date(cloudStory.updatedAt || cloudStory.createdAt);
+      const localLength = this.getStoryCharacterLength(localStory);
+      const cloudLength = this.getStoryCharacterLength(cloudStory);
+      
+      const dateConflict = cloudDate > localDate;
+      const lengthConflict = cloudLength > localLength;
+      
+      if (dateConflict || lengthConflict) {
+        conflicts.push({
+          storyId,
+          title: localStory.title || 'Untitled Story',
+          dateConflict,
+          lengthConflict,
+          localDate: localDate.toISOString(),
+          cloudDate: cloudDate.toISOString(),
+          localLength,
+          cloudLength
+        });
+      }
+    });
+    
+    return conflicts;
+  }
+
+  // Compare stories for download conflicts (cloud vs local)
+  compareStoriesForDownload(cloudStories, localStories) {
+    const conflicts = [];
+    
+    Object.keys(cloudStories).forEach(storyId => {
+      const cloudStory = cloudStories[storyId];
+      const localStory = localStories[storyId];
+      
+      if (!localStory) {
+        return; // New story from cloud, no conflict
+      }
+      
+      const cloudDate = new Date(cloudStory.updatedAt || cloudStory.createdAt);
+      const localDate = new Date(localStory.updatedAt || localStory.createdAt);
+      const cloudLength = this.getStoryCharacterLength(cloudStory);
+      const localLength = this.getStoryCharacterLength(localStory);
+      
+      const dateConflict = localDate > cloudDate;
+      const lengthConflict = localLength > cloudLength;
+      
+      if (dateConflict || lengthConflict) {
+        conflicts.push({
+          storyId,
+          title: cloudStory.title || 'Untitled Story',
+          dateConflict,
+          lengthConflict,
+          cloudDate: cloudDate.toISOString(),
+          localDate: localDate.toISOString(),
+          cloudLength,
+          localLength
+        });
+      }
+    });
+    
+    return conflicts;
   }
 
   // Notes functionality

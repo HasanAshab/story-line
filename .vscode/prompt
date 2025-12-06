@@ -1,0 +1,15 @@
+on this app, my employees often mistakely use the upload and download button.
+for more data safety. 
+Store last update timestampz of each stories.
+
+when clicked,
+  Upload: show the first confirmation. then check the cloud storylines data if:
+    1. any of the storyline's last edit date is greater than local storylines
+    2. any of the storyline's char length is greater than local storylines
+  
+  Download: show the first confirmation. then check the cloud storylines data if:
+    1. any of the storyline's last edit date is less than local storylines
+    2. any of the storyline's char length is less than local storylines
+
+If any show the warnings with proper details and if they still proceed only then move forward
+this way data loss will be more infrequent

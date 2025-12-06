@@ -8,6 +8,8 @@ class StorylineApp {
     this.touchStartY = 0;
     this.touchStartX = 0;
     this.draggedElement = null;
+    this.hasUnsavedChanges = false;
+    this.originalStoryState = null;
     this.loadInitialAutoSavePreference();
     this.init();
   }
@@ -20,7 +22,7 @@ class StorylineApp {
   bindEvents() {
     // Navigation
     document.getElementById('newStoryBtn').addEventListener('click', () => this.createNewStory());
-    document.getElementById('backBtn').addEventListener('click', () => this.showStoryList());
+    document.getElementById('backBtn').addEventListener('click', () => this.handleBackButton());
 
     // Story actions
     document.getElementById('saveStoryBtn').addEventListener('click', () => this.saveCurrentStory());
@@ -145,8 +147,14 @@ class StorylineApp {
     }
 
     document.getElementById('storyTitle').value = story.title || '';
+    
+    // Save original state for change detection
+    this.originalStoryState = JSON.parse(JSON.stringify(story));
+    this.hasUnsavedChanges = false;
+    
     this.loadAutoSavePreference();
     this.setupAutoSaveListeners();
+    this.setupChangeDetection();
     this.renderParagraphs();
   }
 
@@ -183,11 +191,11 @@ class StorylineApp {
                         <input type="text" class="paragraph-heading" placeholder="Heading (optional)" 
                                value="${this.escapeHtml(paragraph.heading || '')}" 
                                onchange="app.updateParagraphHeading(${index}, this.value)"
-                               oninput="app.triggerAutoSave()">
+                               oninput="app.triggerAutoSave(); app.markAsChanged();">
                         <textarea class="paragraph-content" placeholder="Write your paragraph here..." 
                                   spellcheck="false"
                                   onchange="app.updateParagraphContent(${index}, this.value)"
-                                  oninput="app.triggerAutoSave()">${this.escapeHtml(paragraph.content || '')}</textarea>
+                                  oninput="app.triggerAutoSave(); app.markAsChanged();">${this.escapeHtml(paragraph.content || '')}</textarea>
                     </div>
                 </div>
             `;
@@ -282,6 +290,10 @@ class StorylineApp {
 
     story.updatedAt = new Date().toISOString();
     this.saveStories();
+
+    // Reset unsaved changes flag and update original state
+    this.hasUnsavedChanges = false;
+    this.originalStoryState = JSON.parse(JSON.stringify(story));
 
     // Show feedback
     const btn = document.getElementById('saveStoryBtn');
@@ -615,6 +627,10 @@ class StorylineApp {
     story.updatedAt = new Date().toISOString();
     this.saveStories();
 
+    // Reset unsaved changes flag since auto-save completed
+    this.hasUnsavedChanges = false;
+    this.originalStoryState = JSON.parse(JSON.stringify(story));
+
     // Show subtle feedback
     const saveBtn = document.getElementById('saveStoryBtn');
     const originalText = saveBtn.textContent;
@@ -878,6 +894,60 @@ class StorylineApp {
     });
 
     story.updatedAt = new Date().toISOString();
+  }
+
+  handleBackButton() {
+    if (this.hasUnsavedChanges && !this.autoSaveEnabled) {
+      const confirmLeave = confirm('You have unsaved changes. Are you sure you want to go back without saving?');
+      if (!confirmLeave) {
+        return;
+      }
+    }
+    this.showStoryList();
+  }
+
+  setupChangeDetection() {
+    // Track changes on title input
+    const titleInput = document.getElementById('storyTitle');
+    titleInput.addEventListener('input', () => this.markAsChanged());
+
+    // Note: Paragraph changes are tracked in the oninput handlers in renderParagraphs
+  }
+
+  markAsChanged() {
+    if (!this.autoSaveEnabled) {
+      this.hasUnsavedChanges = true;
+    }
+  }
+
+  getCurrentStoryState() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) return null;
+
+    // Get current form state
+    const currentState = {
+      title: document.getElementById('storyTitle').value || '',
+      paragraphs: []
+    };
+
+    const headingInputs = document.querySelectorAll('.paragraph-heading');
+    const contentInputs = document.querySelectorAll('.paragraph-content');
+
+    headingInputs.forEach((input, index) => {
+      if (!currentState.paragraphs[index]) {
+        currentState.paragraphs[index] = {};
+      }
+      currentState.paragraphs[index].heading = input.value || '';
+    });
+
+    contentInputs.forEach((input, index) => {
+      if (!currentState.paragraphs[index]) {
+        currentState.paragraphs[index] = {};
+      }
+      currentState.paragraphs[index].content = input.value || '';
+    });
+
+    return currentState;
   }
 
   escapeHtml(text) {

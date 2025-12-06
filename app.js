@@ -48,6 +48,14 @@ class StorylineApp {
 
     // Clear cache button
     document.getElementById('clearCacheBtn').addEventListener('click', () => this.clearPWACache());
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', (e) => this.handleSearch(e.target.value));
+    document.getElementById('clearSearchBtn').addEventListener('click', () => this.clearSearch());
+
+    // Paragraph search functionality
+    document.getElementById('paragraphSearchInput').addEventListener('input', (e) => this.handleParagraphSearch(e.target.value));
+    document.getElementById('clearParagraphSearchBtn').addEventListener('click', () => this.clearParagraphSearch());
   }
 
   loadStories() {
@@ -80,35 +88,17 @@ class StorylineApp {
   }
 
   renderStoryList() {
-    const container = document.getElementById('storyList');
-    const storyIds = Object.keys(this.stories);
-
-    if (storyIds.length === 0) {
-      container.innerHTML = `
-                <div class="empty-state">
-                    <h3>No stories yet</h3>
-                    <p>Create your first story to get started!</p>
-                </div>
-            `;
-      return;
+    // Clear search when rendering story list
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    if (searchInput) {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
     }
-
-    container.innerHTML = storyIds.map(id => {
-      const story = this.stories[id];
-      const preview = this.getStoryPreview(story);
-      const paragraphCount = story.paragraphs ? story.paragraphs.length : 0;
-
-      return `
-                <div class="story-card" onclick="app.editStory('${id}')">
-                    <h3>${this.escapeHtml(story.title || 'Untitled Story')}</h3>
-                    <div class="story-meta">
-                        ${paragraphCount} paragraph${paragraphCount !== 1 ? 's' : ''} • 
-                        ${new Date(story.updatedAt || story.createdAt).toLocaleDateString()}
-                    </div>
-                    <div class="story-preview">${preview}</div>
-                </div>
-            `;
-    }).join('');
+    
+    // Use the filter method with empty search term to show all stories
+    this.filterStories('');
   }
 
   getStoryPreview(story) {
@@ -428,13 +418,7 @@ class StorylineApp {
     return words.join(' ') + (content.trim().split(' ').length > 3 ? '...' : '');
   }
 
-  toggleParagraph(index) {
-    const story = this.stories[this.currentStoryId];
-    story.paragraphs[index].collapsed = !story.paragraphs[index].collapsed;
-    story.updatedAt = new Date().toISOString();
-    this.triggerAutoSave();
-    this.renderParagraphs();
-  }
+
 
   expandAllParagraphs() {
     const story = this.stories[this.currentStoryId];
@@ -948,6 +932,184 @@ class StorylineApp {
     });
 
     return currentState;
+  }
+
+  handleSearch(searchTerm) {
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    // Show/hide clear button based on search term
+    if (searchTerm.trim()) {
+      clearBtn.style.display = 'flex';
+    } else {
+      clearBtn.style.display = 'none';
+    }
+    
+    this.filterStories(searchTerm);
+  }
+
+  clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    this.filterStories('');
+  }
+
+  filterStories(searchTerm) {
+    const container = document.getElementById('storyList');
+    const storyIds = Object.keys(this.stories);
+
+    if (storyIds.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <h3>No stories yet</h3>
+          <p>Create your first story to get started!</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Filter stories based on search term
+    const filteredIds = storyIds.filter(id => {
+      const story = this.stories[id];
+      const searchLower = searchTerm.toLowerCase();
+      
+      // Search in title
+      if (story.title && story.title.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+      
+      // Search in paragraph content
+      if (story.paragraphs) {
+        return story.paragraphs.some(paragraph => {
+          const headingMatch = paragraph.heading && paragraph.heading.toLowerCase().includes(searchLower);
+          const contentMatch = paragraph.content && paragraph.content.toLowerCase().includes(searchLower);
+          return headingMatch || contentMatch;
+        });
+      }
+      
+      return false;
+    });
+
+    if (filteredIds.length === 0 && searchTerm.trim()) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <h3>No stories found</h3>
+          <p>No stories match "${this.escapeHtml(searchTerm)}"</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Render filtered stories
+    container.innerHTML = filteredIds.map(id => {
+      const story = this.stories[id];
+      const preview = this.getStoryPreview(story);
+      const paragraphCount = story.paragraphs ? story.paragraphs.length : 0;
+
+      return `
+        <div class="story-card" onclick="app.editStory('${id}')">
+          <h3>${this.escapeHtml(story.title || 'Untitled Story')}</h3>
+          <div class="story-meta">
+            ${paragraphCount} paragraph${paragraphCount !== 1 ? 's' : ''} • 
+            ${new Date(story.updatedAt || story.createdAt).toLocaleDateString()}
+          </div>
+          <div class="story-preview">${preview}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  handleParagraphSearch(searchTerm) {
+    const clearBtn = document.getElementById('clearParagraphSearchBtn');
+    
+    // Show/hide clear button based on search term
+    if (searchTerm.trim()) {
+      clearBtn.style.display = 'flex';
+    } else {
+      clearBtn.style.display = 'none';
+    }
+    
+    this.filterParagraphs(searchTerm);
+  }
+
+  clearParagraphSearch() {
+    const searchInput = document.getElementById('paragraphSearchInput');
+    const clearBtn = document.getElementById('clearParagraphSearchBtn');
+    
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    this.filterParagraphs('');
+  }
+
+  filterParagraphs(searchTerm) {
+    const paragraphItems = document.querySelectorAll('.paragraph-item');
+    const searchLower = searchTerm.toLowerCase().trim();
+
+    if (!searchLower) {
+      // Show all paragraphs and remove highlighting
+      paragraphItems.forEach(item => {
+        item.classList.remove('search-hidden', 'search-match');
+        item.style.display = '';
+      });
+      return;
+    }
+
+    let hasMatches = false;
+
+    paragraphItems.forEach((item, index) => {
+      const story = this.stories[this.currentStoryId];
+      const paragraph = story.paragraphs[index];
+      
+      if (!paragraph) {
+        item.classList.add('search-hidden');
+        return;
+      }
+
+      const headingMatch = paragraph.heading && paragraph.heading.toLowerCase().includes(searchLower);
+      const contentMatch = paragraph.content && paragraph.content.toLowerCase().includes(searchLower);
+      
+      if (headingMatch || contentMatch) {
+        item.classList.remove('search-hidden');
+        item.classList.add('search-match');
+        item.style.display = '';
+        hasMatches = true;
+        
+        // Auto-expand collapsed paragraphs that match
+        if (paragraph.collapsed) {
+          this.toggleParagraph(index, false); // Don't save, just expand for search
+        }
+      } else {
+        item.classList.add('search-hidden');
+        item.classList.remove('search-match');
+        item.style.display = 'none';
+      }
+    });
+
+    // If no matches, show a message
+    if (!hasMatches && searchTerm.trim()) {
+      // You could add a "no matches" message here if desired
+    }
+  }
+
+  // Update toggleParagraph to accept a save parameter
+  toggleParagraph(index, shouldSave = true) {
+    const story = this.stories[this.currentStoryId];
+    story.paragraphs[index].collapsed = !story.paragraphs[index].collapsed;
+    
+    if (shouldSave) {
+      story.updatedAt = new Date().toISOString();
+      this.triggerAutoSave();
+    }
+    
+    this.renderParagraphs();
+    
+    // Restore search state after re-render
+    const searchInput = document.getElementById('paragraphSearchInput');
+    if (searchInput && searchInput.value.trim()) {
+      this.filterParagraphs(searchInput.value);
+    }
   }
 
   escapeHtml(text) {

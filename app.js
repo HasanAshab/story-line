@@ -11,7 +11,9 @@ class StorylineApp {
     this.hasUnsavedChanges = false;
     this.originalStoryState = null;
     this.paragraphSearchTimeout = null;
+    this.uploadPassword = null;
     this.loadInitialAutoSavePreference();
+    this.loadEnvironmentConfig();
     this.init();
   }
 
@@ -473,6 +475,11 @@ class StorylineApp {
   }
 
   async syncToCloud() {
+    // Password verification first
+    if (!this.verifyUploadPassword()) {
+      return;
+    }
+
     // First confirmation
     const confirmSync = confirm('This will upload your local stories to the cloud. Continue?');
     if (!confirmSync) {
@@ -673,6 +680,52 @@ class StorylineApp {
   loadInitialAutoSavePreference() {
     const saved = localStorage.getItem('storyline_autosave');
     this.autoSaveEnabled = saved === 'true';
+  }
+
+  async loadEnvironmentConfig() {
+    try {
+      // Try to load .env file
+      const response = await fetch('.env');
+      if (response.ok) {
+        const envText = await response.text();
+        const envLines = envText.split('\n');
+        
+        envLines.forEach(line => {
+          line = line.trim();
+          if (line && !line.startsWith('#') && line.includes('=')) {
+            const [key, ...valueParts] = line.split('=');
+            const value = valueParts.join('=').trim();
+            
+            if (key.trim() === 'UPLOAD_PASSWORD') {
+              this.uploadPassword = value;
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Could not load .env file:', error);
+      // Fallback: use a default password or prompt user
+      this.uploadPassword = 'default_password';
+    }
+  }
+
+  verifyUploadPassword() {
+    if (!this.uploadPassword || this.uploadPassword === 'your_secure_password_here') {
+      alert('Upload password not configured. Please set UPLOAD_PASSWORD in .env file.');
+      return false;
+    }
+
+    const enteredPassword = prompt('Enter upload password:');
+    if (!enteredPassword) {
+      return false;
+    }
+
+    if (enteredPassword !== this.uploadPassword) {
+      alert('Incorrect password. Upload cancelled.');
+      return false;
+    }
+
+    return true;
   }
 
   loadAutoSavePreference() {

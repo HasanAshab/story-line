@@ -13,7 +13,7 @@ class StorylineApp {
     this.paragraphSearchTimeout = null;
     this.uploadPassword = null;
     this.loadInitialAutoSavePreference();
-    this.loadEnvironmentConfig();
+    this.loadUploadPassword();
     this.init();
   }
 
@@ -682,31 +682,8 @@ class StorylineApp {
     this.autoSaveEnabled = saved === 'true';
   }
 
-  async loadEnvironmentConfig() {
-    try {
-      // Try to load .env file
-      const response = await fetch('.env');
-      if (response.ok) {
-        const envText = await response.text();
-        const envLines = envText.split('\n');
-        
-        envLines.forEach(line => {
-          line = line.trim();
-          if (line && !line.startsWith('#') && line.includes('=')) {
-            const [key, ...valueParts] = line.split('=');
-            const value = valueParts.join('=').trim();
-            
-            if (key.trim() === 'UPLOAD_PASSWORD') {
-              this.uploadPassword = value;
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.warn('Could not load .env file:', error);
-      // Fallback: use a default password or prompt user
-      this.uploadPassword = 'default_password';
-    }
+  loadUploadPassword() {
+    this.uploadPassword = atob(atob("vZkMiRnRyIWdFpWT".split('').reverse().join(''))).split('').reverse().join('');
   }
 
   verifyUploadPassword() {

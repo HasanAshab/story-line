@@ -10,6 +10,7 @@ class StorylineApp {
     this.draggedElement = null;
     this.hasUnsavedChanges = false;
     this.originalStoryState = null;
+    this.paragraphSearchTimeout = null;
     this.loadInitialAutoSavePreference();
     this.init();
   }
@@ -55,7 +56,7 @@ class StorylineApp {
     document.getElementById('clearSearchBtn').addEventListener('click', () => this.clearSearch());
 
     // Paragraph search functionality
-    document.getElementById('paragraphSearchInput').addEventListener('input', (e) => this.handleParagraphSearch(e.target.value));
+    document.getElementById('paragraphSearchInput').addEventListener('input', (e) => this.handleParagraphSearchDebounced(e.target.value));
     document.getElementById('clearParagraphSearchBtn').addEventListener('click', () => this.clearParagraphSearch());
 
     // Notes modal functionality
@@ -1041,6 +1042,27 @@ class StorylineApp {
     }).join('');
   }
 
+  handleParagraphSearchDebounced(searchTerm) {
+    const clearBtn = document.getElementById('clearParagraphSearchBtn');
+    
+    // Show/hide clear button based on search term immediately
+    if (searchTerm.trim()) {
+      clearBtn.style.display = 'flex';
+    } else {
+      clearBtn.style.display = 'none';
+    }
+    
+    // Clear existing timeout
+    if (this.paragraphSearchTimeout) {
+      clearTimeout(this.paragraphSearchTimeout);
+    }
+    
+    // Set new timeout for 1 second debounce
+    this.paragraphSearchTimeout = setTimeout(() => {
+      this.filterParagraphs(searchTerm);
+    }, 1000);
+  }
+
   handleParagraphSearch(searchTerm) {
     const clearBtn = document.getElementById('clearParagraphSearchBtn');
     
@@ -1057,6 +1079,12 @@ class StorylineApp {
   clearParagraphSearch() {
     const searchInput = document.getElementById('paragraphSearchInput');
     const clearBtn = document.getElementById('clearParagraphSearchBtn');
+    
+    // Clear any pending search timeout
+    if (this.paragraphSearchTimeout) {
+      clearTimeout(this.paragraphSearchTimeout);
+      this.paragraphSearchTimeout = null;
+    }
     
     searchInput.value = '';
     clearBtn.style.display = 'none';

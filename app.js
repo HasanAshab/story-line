@@ -43,6 +43,7 @@ class StorylineApp {
     // Sync actions
     document.getElementById('syncToCloudBtn').addEventListener('click', () => this.syncToCloud());
     document.getElementById('syncFromCloudBtn').addEventListener('click', () => this.syncFromCloud());
+    document.getElementById('manageVersionsBtn').addEventListener('click', () => this.showVersionsModal());
 
     // Auto-save toggle
     document.getElementById('autoSaveToggle').addEventListener('change', (e) => {
@@ -78,6 +79,14 @@ class StorylineApp {
     });
     document.getElementById('addNoteBtn').addEventListener('click', () => this.addNewNote());
     document.getElementById('cancelNoteBtn').addEventListener('click', () => this.cancelNewNote());
+
+    // Version management modal functionality
+    document.getElementById('closeVersionsBtn').addEventListener('click', () => this.closeVersionsModal());
+    document.getElementById('versionsModal').addEventListener('click', (e) => {
+      if (e.target.id === 'versionsModal') {
+        this.closeVersionsModal();
+      }
+    });
   }
 
   loadStories() {
@@ -546,9 +555,31 @@ class StorylineApp {
         story.lastSyncAt = new Date().toISOString();
       });
 
+      // Get existing versions to maintain version history
+      const existingDoc = await getDoc(userDocRef);
+      let versions = [];
+      
+      if (existingDoc.exists()) {
+        const existingData = existingDoc.data();
+        versions = existingData.versions || [];
+        
+        // Add current data as a new version if it exists
+        if (existingData.stories) {
+          versions.unshift({
+            timestamp: existingData.lastSync || new Date().toISOString(),
+            stories: existingData.stories,
+            description: `Backup from ${new Date(existingData.lastSync || new Date()).toLocaleString()}`
+          });
+        }
+      }
+      
+      // Keep only the last 3 versions
+      versions = versions.slice(0, 3);
+
       await setDoc(userDocRef, {
         stories: this.stories,
-        lastSync: new Date().toISOString()
+        lastSync: new Date().toISOString(),
+        versions: versions
       });
 
       this.saveStories(); // Save the updated timestamps locally
@@ -1555,6 +1586,208 @@ class StorylineApp {
       
       this.renderParagraphNotes();
       this.renderParagraphs(); // Update note indicators
+    }
+  }
+
+  // Version management functionality
+  async showVersionsModal() {
+    try {
+      const btn = document.getElementById('manageVersionsBtn');
+      const originalText = btn.textContent;
+      btn.textContent = '📋 Loading...';
+      btn.disabled = true;
+
+      // Wait for Firebase to be available
+      if (!window.db) {
+        throw new Error('Firebase not initialized');
+      }
+
+      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      const userDocRef = doc(window.db, 'storylines', 'user_data');
+      const docSnap = await getDoc(userDocRef);
+
+      let versions = [];
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        versions = data.versions || [];
+      }
+
+      this.renderVersionsList(versions);
+      document.getElementById('versionsModal').style.display = 'flex';
+
+      btn.textContent = originalText;
+      btn.disabled = false;
+
+    } catch (error) {
+      console.error('Failed to load versions:', error);
+      const btn = document.getElementById('manageVersionsBtn');
+      btn.textContent = '❌ Load Failed';
+      btn.style.background = '#f44336';
+      setTimeout(() => {
+        btn.textContent = '📋 Manage Versions';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+    }
+  }
+
+  closeVersionsModal() {
+    document.getElementById('versionsModal').style.display = 'none';
+  }
+
+  renderVersionsList(versions) {
+    const versionsList = document.getElementById('versionsList');
+    
+    if (!versions || versions.length === 0) {
+      versionsList.innerHTML = '<div class="versions-empty">No backup versions available yet. Upload to cloud to create your first backup.</div>';
+      return;
+    }
+
+    versionsList.innerHTML = versions.map((version, index) => {
+      const versionDate = new Date(version.timestamp);
+      const storyCount = Object.keys(version.stories || {}).length;
+      const totalParagraphs = Object.values(version.stories || {}).reduce((total, story) => {
+        return total + (story.paragraphs ? story.paragraphs.length : 0);
+      }, 0);
+
+      return `
+        <div class="version-item">
+          <div class="version-header">
+            <div class="version-info">
+              <div class="version-date">${versionDate.toLocaleString()}</div>
+              <div class="version-stats">${storyCount} stories • ${totalParagraphs} paragraphs</div>
+            </div>
+            <div class="version-controls">
+              <button class="version-btn preview-btn" onclick="app.previewVersion(${index})" title="Preview this version">👁️</button>
+              <button class="version-btn restore-btn" onclick="app.restoreVersion(${index})" title="Restore this version">🔄</button>
+            </div>
+          </div>
+          <div class="version-description">${this.escapeHtml(version.description || 'Backup version')}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async previewVersion(versionIndex) {
+    try {
+      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      const userDocRef = doc(window.db, 'storylines', 'user_data');
+      const docSnap = await getDoc(userDocRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('No cloud data found');
+      }
+
+      const data = docSnap.data();
+      const versions = data.versions || [];
+      const version = versions[versionIndex];
+
+      if (!version) {
+        throw new Error('Version not found');
+      }
+
+      // Create preview content
+      const stories = version.stories || {};
+      const storyIds = Object.keys(stories);
+      
+      let previewHTML = `<div class="version-preview-header">
+        <h3>Version Preview: ${new Date(version.timestamp).toLocaleString()}</h3>
+        <p>${storyIds.length} stories in this version</p>
+      </div>`;
+
+      if (storyIds.length === 0) {
+        previewHTML += '<div class="preview-empty">No stories in this version.</div>';
+      } else {
+        previewHTML += storyIds.map(storyId => {
+          const story = stories[storyId];
+          const paragraphCount = story.paragraphs ? story.paragraphs.length : 0;
+          const preview = this.getStoryPreview(story);
+
+          return `
+            <div class="preview-story-card">
+              <h4>${this.escapeHtml(story.title || 'Untitled Story')}</h4>
+              <div class="preview-story-meta">
+                ${paragraphCount} paragraph${paragraphCount !== 1 ? 's' : ''} • 
+                ${new Date(story.updatedAt || story.createdAt).toLocaleDateString()}
+              </div>
+              <div class="preview-story-content">${preview}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Show preview in a new modal or replace current content
+      const versionsList = document.getElementById('versionsList');
+      const originalContent = versionsList.innerHTML;
+      
+      versionsList.innerHTML = `
+        <div class="version-preview">
+          ${previewHTML}
+          <div class="preview-controls">
+            <button class="version-btn" onclick="app.closeVersionPreview('${originalContent.replace(/'/g, "\\'")}')">← Back to Versions</button>
+          </div>
+        </div>
+      `;
+
+    } catch (error) {
+      console.error('Failed to preview version:', error);
+      alert('Failed to preview version. Please try again.');
+    }
+  }
+
+  closeVersionPreview(originalContent) {
+    const versionsList = document.getElementById('versionsList');
+    versionsList.innerHTML = originalContent.replace(/\\'/g, "'");
+  }
+
+  async restoreVersion(versionIndex) {
+    // Multiple confirmations for safety
+    const confirmRestore = confirm('⚠️ WARNING: This will replace ALL your current local stories with the selected backup version.\n\nThis action cannot be undone. Are you sure you want to continue?');
+    if (!confirmRestore) {
+      return;
+    }
+
+    const doubleConfirm = confirm('🚨 FINAL WARNING: You are about to permanently replace your current stories.\n\nType "RESTORE" in the next dialog to confirm this action.');
+    if (!doubleConfirm) {
+      return;
+    }
+
+    const confirmText = prompt('Type "RESTORE" (in capital letters) to confirm:');
+    if (confirmText !== 'RESTORE') {
+      alert('Restoration cancelled. You must type "RESTORE" exactly to confirm.');
+      return;
+    }
+
+    try {
+      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      const userDocRef = doc(window.db, 'storylines', 'user_data');
+      const docSnap = await getDoc(userDocRef);
+
+      if (!docSnap.exists()) {
+        throw new Error('No cloud data found');
+      }
+
+      const data = docSnap.data();
+      const versions = data.versions || [];
+      const version = versions[versionIndex];
+
+      if (!version) {
+        throw new Error('Version not found');
+      }
+
+      // Restore the version
+      this.stories = version.stories || {};
+      this.saveStories();
+      
+      // Close modal and refresh view
+      this.closeVersionsModal();
+      this.showStoryList();
+
+      alert(`✅ Successfully restored ${Object.keys(this.stories).length} stories from backup created on ${new Date(version.timestamp).toLocaleString()}`);
+
+    } catch (error) {
+      console.error('Failed to restore version:', error);
+      alert('Failed to restore version. Please try again.');
     }
   }
 }

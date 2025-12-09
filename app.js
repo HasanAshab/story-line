@@ -40,6 +40,10 @@ class StorylineApp {
     document.getElementById('expandAllBtn').addEventListener('click', () => this.expandAllParagraphs());
     document.getElementById('collapseAllBtn').addEventListener('click', () => this.collapseAllParagraphs());
 
+    // Progress actions
+    document.getElementById('progressBtn').addEventListener('click', () => this.showProgress());
+    document.getElementById('progressEditBtn').addEventListener('click', () => this.showEdit());
+
     // Sync actions
     document.getElementById('syncToCloudBtn').addEventListener('click', () => this.syncToCloud());
     document.getElementById('syncFromCloudBtn').addEventListener('click', () => this.syncFromCloud());
@@ -93,10 +97,21 @@ class StorylineApp {
     const stored = localStorage.getItem(this.storageKey);
     const stories = stored ? JSON.parse(stored) : {};
     
-    // Ensure all stories have the lastSyncAt field
+    // Ensure all stories have the required fields
     Object.values(stories).forEach(story => {
       if (!story.hasOwnProperty('lastSyncAt')) {
         story.lastSyncAt = null;
+      }
+      if (!story.hasOwnProperty('progressData')) {
+        story.progressData = {};
+      }
+      // Ensure all paragraphs have progress field
+      if (story.paragraphs) {
+        story.paragraphs.forEach(paragraph => {
+          if (!paragraph.hasOwnProperty('progress')) {
+            paragraph.progress = {};
+          }
+        });
       }
     });
     
@@ -160,7 +175,8 @@ class StorylineApp {
       paragraphs: [],
       createdAt: now,
       updatedAt: now,
-      lastSyncAt: null
+      lastSyncAt: null,
+      progressData: {} // Initialize progress tracking for new stories
     };
     this.saveStories();
     this.showStoryEditor(id);
@@ -180,6 +196,11 @@ class StorylineApp {
 
     document.getElementById('storyTitle').value = story.title || '';
     
+    // Initialize progress data if it doesn't exist
+    if (!story.progressData) {
+      story.progressData = {};
+    }
+    
     // Save original state for change detection
     this.originalStoryState = JSON.parse(JSON.stringify(story));
     this.hasUnsavedChanges = false;
@@ -188,6 +209,7 @@ class StorylineApp {
     this.setupAutoSaveListeners();
     this.setupChangeDetection();
     this.renderParagraphs();
+    this.updateProgressButton();
   }
 
   renderParagraphs() {
@@ -246,7 +268,8 @@ class StorylineApp {
     story.paragraphs.push({
       heading: '',
       content: '',
-      collapsed: false
+      collapsed: false,
+      progress: {} // Initialize progress tracking for new paragraphs
     });
 
     story.updatedAt = new Date().toISOString();
@@ -985,8 +1008,11 @@ class StorylineApp {
 
     const editMode = document.getElementById('editMode');
     const previewMode = document.getElementById('previewMode');
+    const progressMode = document.getElementById('progressMode');
     const previewBtn = document.getElementById('previewBtn');
+    const progressBtn = document.getElementById('progressBtn');
     const editBtn = document.getElementById('editBtn');
+    const progressEditBtn = document.getElementById('progressEditBtn');
     const contentElement = document.getElementById('previewContent');
 
     if (!story.paragraphs || story.paragraphs.length === 0) {
@@ -1013,21 +1039,30 @@ class StorylineApp {
     // Switch to preview mode
     editMode.style.display = 'none';
     previewMode.style.display = 'block';
+    progressMode.style.display = 'none';
     previewBtn.style.display = 'none';
+    progressBtn.style.display = 'inline-block';
     editBtn.style.display = 'inline-block';
+    progressEditBtn.style.display = 'none';
   }
 
   showEdit() {
     const editMode = document.getElementById('editMode');
     const previewMode = document.getElementById('previewMode');
+    const progressMode = document.getElementById('progressMode');
     const previewBtn = document.getElementById('previewBtn');
+    const progressBtn = document.getElementById('progressBtn');
     const editBtn = document.getElementById('editBtn');
+    const progressEditBtn = document.getElementById('progressEditBtn');
 
     // Switch to edit mode
     editMode.style.display = 'block';
     previewMode.style.display = 'none';
+    progressMode.style.display = 'none';
     previewBtn.style.display = 'inline-block';
+    progressBtn.style.display = 'inline-block';
     editBtn.style.display = 'none';
+    progressEditBtn.style.display = 'none';
   }
 
   updateStoryFromForm() {
@@ -1788,6 +1823,195 @@ class StorylineApp {
     } catch (error) {
       console.error('Failed to restore version:', error);
       alert('Failed to restore version. Please try again.');
+    }
+  }
+
+  // Progress tracking functionality
+  showProgress() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) return;
+
+    // Update story data from current form state before showing progress
+    this.updateStoryFromForm();
+
+    const editMode = document.getElementById('editMode');
+    const previewMode = document.getElementById('previewMode');
+    const progressMode = document.getElementById('progressMode');
+    const previewBtn = document.getElementById('previewBtn');
+    const progressBtn = document.getElementById('progressBtn');
+    const editBtn = document.getElementById('editBtn');
+    const progressEditBtn = document.getElementById('progressEditBtn');
+    const contentElement = document.getElementById('progressContent');
+
+    if (!story.paragraphs || story.paragraphs.length === 0) {
+      contentElement.innerHTML = '<div class="progress-empty">No content to track progress yet.</div>';
+    } else {
+      this.renderProgressContent();
+    }
+
+    // Switch to progress mode
+    editMode.style.display = 'none';
+    previewMode.style.display = 'none';
+    progressMode.style.display = 'block';
+    previewBtn.style.display = 'inline-block';
+    progressBtn.style.display = 'none';
+    editBtn.style.display = 'none';
+    progressEditBtn.style.display = 'inline-block';
+  }
+
+  renderProgressContent() {
+    const story = this.stories[this.currentStoryId];
+    const contentElement = document.getElementById('progressContent');
+    
+    // Initialize progress data if needed
+    if (!story.progressData) {
+      story.progressData = {};
+    }
+
+    // Calculate progress statistics
+    const stats = this.calculateProgressStats(story);
+    
+    let progressHTML = `<div class="progress-title">${this.escapeHtml(story.title || 'Untitled Story')}</div>`;
+    
+    // Progress statistics
+    progressHTML += `
+      <div class="progress-stats">
+        <div class="progress-text">${stats.completedSentences} of ${stats.totalSentences} sentences completed</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${stats.percentage}%"></div>
+        </div>
+        <div class="progress-details">${stats.percentage}% complete</div>
+      </div>
+    `;
+
+    // Render paragraphs with clickable sentences
+    story.paragraphs.forEach((paragraph, paragraphIndex) => {
+      if (paragraph.content && paragraph.content.trim()) {
+        progressHTML += '<div class="progress-paragraph">';
+
+        if (paragraph.heading && paragraph.heading.trim()) {
+          progressHTML += `<div class="progress-paragraph-heading">${this.escapeHtml(paragraph.heading)}</div>`;
+        }
+
+        // Split content into sentences and make them clickable
+        const sentences = this.splitIntoSentences(paragraph.content);
+        const sentenceHTML = sentences.map((sentence, sentenceIndex) => {
+          const sentenceId = `${paragraphIndex}-${sentenceIndex}`;
+          const isCompleted = story.progressData[sentenceId] || false;
+          const completedClass = isCompleted ? 'completed' : '';
+          
+          return `<span class="progress-sentence ${completedClass}" 
+                       onclick="app.toggleSentenceProgress('${sentenceId}')"
+                       data-sentence-id="${sentenceId}">
+                    ${this.escapeHtml(sentence)}
+                  </span>`;
+        }).join(' ');
+
+        progressHTML += `<div class="progress-paragraph-content">${sentenceHTML}</div>`;
+        progressHTML += '</div>';
+      }
+    });
+
+    contentElement.innerHTML = progressHTML;
+  }
+
+  splitIntoSentences(text) {
+    // Split text into sentences using common sentence endings
+    // This is a simple implementation - could be enhanced with more sophisticated NLP
+    const sentences = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0);
+    return sentences.map(sentence => sentence.trim() + '.');
+  }
+
+  toggleSentenceProgress(sentenceId) {
+    const story = this.stories[this.currentStoryId];
+    
+    // Initialize progress data if needed
+    if (!story.progressData) {
+      story.progressData = {};
+    }
+
+    // Toggle the sentence completion status
+    story.progressData[sentenceId] = !story.progressData[sentenceId];
+    
+    // Update timestamp
+    story.updatedAt = new Date().toISOString();
+    
+    // Save changes
+    this.saveStories();
+    
+    // Update the visual state
+    const sentenceElement = document.querySelector(`[data-sentence-id="${sentenceId}"]`);
+    if (sentenceElement) {
+      if (story.progressData[sentenceId]) {
+        sentenceElement.classList.add('completed');
+      } else {
+        sentenceElement.classList.remove('completed');
+      }
+    }
+    
+    // Update progress statistics
+    this.updateProgressStats();
+    this.updateProgressButton();
+  }
+
+  calculateProgressStats(story) {
+    if (!story.paragraphs || story.paragraphs.length === 0) {
+      return { totalSentences: 0, completedSentences: 0, percentage: 0 };
+    }
+
+    let totalSentences = 0;
+    let completedSentences = 0;
+
+    story.paragraphs.forEach((paragraph, paragraphIndex) => {
+      if (paragraph.content && paragraph.content.trim()) {
+        const sentences = this.splitIntoSentences(paragraph.content);
+        totalSentences += sentences.length;
+
+        sentences.forEach((sentence, sentenceIndex) => {
+          const sentenceId = `${paragraphIndex}-${sentenceIndex}`;
+          if (story.progressData && story.progressData[sentenceId]) {
+            completedSentences++;
+          }
+        });
+      }
+    });
+
+    const percentage = totalSentences > 0 ? Math.round((completedSentences / totalSentences) * 100) : 0;
+
+    return { totalSentences, completedSentences, percentage };
+  }
+
+  updateProgressStats() {
+    const story = this.stories[this.currentStoryId];
+    const stats = this.calculateProgressStats(story);
+    
+    // Update the progress bar and text in the current view
+    const progressText = document.querySelector('.progress-text');
+    const progressFill = document.querySelector('.progress-fill');
+    const progressDetails = document.querySelector('.progress-details');
+    
+    if (progressText) {
+      progressText.textContent = `${stats.completedSentences} of ${stats.totalSentences} sentences completed`;
+    }
+    
+    if (progressFill) {
+      progressFill.style.width = `${stats.percentage}%`;
+    }
+    
+    if (progressDetails) {
+      progressDetails.textContent = `${stats.percentage}% complete`;
+    }
+  }
+
+  updateProgressButton() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) return;
+
+    const stats = this.calculateProgressStats(story);
+    const progressBtn = document.getElementById('progressBtn');
+    
+    if (progressBtn) {
+      progressBtn.textContent = `📊 Progress (${stats.percentage}%)`;
     }
   }
 }

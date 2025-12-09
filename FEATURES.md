@@ -38,6 +38,14 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Typography**: Serif fonts and proper spacing for comfortable reading
 - **Structured Display**: Organized presentation with headings and paragraphs
 
+### Progress Tracking
+- **Sentence-Level Progress**: Mark individual sentences as completed or pending
+- **Visual Progress Indicators**: Click sentences to toggle completion status with visual feedback
+- **Progress Statistics**: Real-time progress bar and percentage completion display
+- **Progress Button**: Shows current completion percentage in the editor header
+- **Persistent Progress**: Progress data is saved locally and syncs with cloud storage
+- **Interactive Progress View**: Preview-like mode where sentences can be clicked to mark as done
+
 ## ☁️ Cloud Sync Features
 
 ### Data Synchronization
@@ -46,6 +54,7 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Conflict Detection**: Warns about potential data loss before sync operations
 - **Password Protection**: Secure uploads with password verification
 - **Timestamp Tracking**: Monitors last sync times for each story
+- **Progress Sync**: Progress tracking data is included in cloud synchronization
 
 ### Version Management
 - **Automatic Versioning**: Keeps last 3 backup versions automatically when uploading

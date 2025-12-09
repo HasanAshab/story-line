@@ -1029,6 +1029,155 @@ body {
         text-indent: 1rem;
     }
 }
+
+/* Progress View */
+.progress-view {
+    padding: 2rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 1rem;
+}
+
+.progress-content {
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.8;
+    color: #333;
+}
+
+.progress-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: center;
+    color: #2196F3;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 0.5rem;
+}
+
+.progress-stats {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.progress-details {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.progress-paragraph {
+    margin-bottom: 2rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    background: white;
+}
+
+.progress-paragraph-heading {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #444;
+}
+
+.progress-paragraph-content {
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.progress-sentence {
+    display: inline;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s;
+    margin: 0 1px;
+}
+
+.progress-sentence:hover {
+    background: #f0f0f0;
+}
+
+.progress-sentence.completed {
+    background: #c8e6c9;
+    color: #2e7d32;
+    text-decoration: line-through;
+}
+
+.progress-sentence.completed:hover {
+    background: #a5d6a7;
+}
+
+.progress-empty {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 2rem;
+}
+
+/* Mobile Progress Adjustments */
+@media (max-width: 768px) {
+    .progress-view {
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    .progress-title {
+        font-size: 1.5rem;
+    }
+    
+    .progress-paragraph-heading {
+        font-size: 1.1rem;
+    }
+    
+    .progress-paragraph-content {
+        font-size: 0.95rem;
+    }
+    
+    .progress-sentence {
+        padding: 3px 5px;
+        margin: 1px 2px;
+    }
+    
+    .progress-stats {
+        padding: 0.75rem;
+    }
+    
+    .progress-text {
+        font-size: 1rem;
+    }
+    
+    .progress-details {
+        font-size: 0.85rem;
+    }
+}
 /*
  Version Management Styles */
 .modal-large {

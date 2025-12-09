@@ -65,6 +65,8 @@
           <button id="backBtn" class="btn btn-secondary">← Back</button>
           <button id="previewBtn" class="btn btn-secondary">👁️ Preview</button>
           <button id="editBtn" class="btn btn-secondary" style="display: none;">✏️ Edit</button>
+          <button id="progressBtn" class="btn btn-secondary">📊 Progress (0%)</button>
+          <button id="progressEditBtn" class="btn btn-secondary" style="display: none;">✏️ Edit</button>
           <button id="notesBtn" class="btn btn-secondary">📝 Notes</button>
           <button id="saveStoryBtn" class="btn btn-primary">Save</button>
           <button id="deleteStoryBtn" class="btn btn-danger">Delete</button>
@@ -113,6 +115,11 @@
         <!-- Preview Mode -->
         <div id="previewMode" class="preview-view" style="display: none;">
           <div id="previewContent" class="preview-content"></div>
+        </div>
+
+        <!-- Progress Mode -->
+        <div id="progressMode" class="progress-view" style="display: none;">
+          <div id="progressContent" class="progress-content"></div>
         </div>
       </div>
     </main>

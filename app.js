@@ -12,6 +12,7 @@ class StorylineApp {
     this.originalStoryState = null;
     this.paragraphSearchTimeout = null;
     this.uploadPassword = null;
+    this.showLimitedParagraphs = true; // Show only last 5 paragraphs by default for mobile performance
     this.loadInitialAutoSavePreference();
     this.loadUploadPassword();
     this.init();
@@ -39,6 +40,7 @@ class StorylineApp {
     document.getElementById('addParagraphBtn').addEventListener('click', () => this.addParagraph());
     document.getElementById('expandAllBtn').addEventListener('click', () => this.expandAllParagraphs());
     document.getElementById('collapseAllBtn').addEventListener('click', () => this.collapseAllParagraphs());
+    document.getElementById('showAllParagraphsBtn').addEventListener('click', () => this.toggleParagraphsView());
 
     // Progress actions
     document.getElementById('progressBtn').addEventListener('click', () => this.showProgress());
@@ -201,6 +203,9 @@ class StorylineApp {
       story.progressData = {};
     }
     
+    // Reset to limited view when opening a story for consistent mobile performance
+    this.showLimitedParagraphs = true;
+    
     // Save original state for change detection
     this.originalStoryState = JSON.parse(JSON.stringify(story));
     this.hasUnsavedChanges = false;
@@ -218,10 +223,34 @@ class StorylineApp {
 
     if (!story.paragraphs || story.paragraphs.length === 0) {
       container.innerHTML = '<p class="empty-state">No paragraphs yet. Add your first paragraph!</p>';
+      this.updateShowAllButton();
       return;
     }
 
-    container.innerHTML = story.paragraphs.map((paragraph, index) => {
+    // Determine which paragraphs to show
+    let paragraphsToShow = story.paragraphs;
+    let startIndex = 0;
+    
+    if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
+      startIndex = story.paragraphs.length - 5;
+      paragraphsToShow = story.paragraphs.slice(startIndex);
+    }
+
+    // Show hidden paragraphs indicator if we're in limited mode
+    let hiddenIndicator = '';
+    if (this.showLimitedParagraphs && startIndex > 0) {
+      hiddenIndicator = `
+        <div class="hidden-paragraphs-indicator">
+          <p>📝 ${startIndex} earlier paragraph${startIndex !== 1 ? 's' : ''} hidden for better performance</p>
+          <button class="btn btn-small show-all-btn" onclick="app.toggleParagraphsView()">
+            📋 Show All ${story.paragraphs.length} Paragraphs
+          </button>
+        </div>
+      `;
+    }
+
+    container.innerHTML = hiddenIndicator + paragraphsToShow.map((paragraph, relativeIndex) => {
+      const index = startIndex + relativeIndex; // Actual index in the full array
       const isCollapsed = paragraph.collapsed || false;
       const displayHeading = paragraph.heading || this.getAutoHeading(paragraph.content);
 
@@ -259,6 +288,7 @@ class StorylineApp {
     this.initDragAndDrop();
     this.initMobileDragAndDrop();
     this.initAutoResize();
+    this.updateShowAllButton();
   }
 
   addParagraph() {
@@ -275,6 +305,15 @@ class StorylineApp {
     story.updatedAt = new Date().toISOString();
     this.triggerAutoSave();
     this.renderParagraphs();
+    
+    // Auto-focus the new paragraph's content area if it's visible
+    setTimeout(() => {
+      const contentAreas = document.querySelectorAll('.paragraph-content');
+      if (contentAreas.length > 0) {
+        const lastContentArea = contentAreas[contentAreas.length - 1];
+        lastContentArea.focus();
+      }
+    }, 100);
   }
 
   updateParagraphHeading(index, heading) {
@@ -504,6 +543,32 @@ class StorylineApp {
     story.updatedAt = new Date().toISOString();
     this.triggerAutoSave();
     this.renderParagraphs();
+  }
+
+  toggleParagraphsView() {
+    this.showLimitedParagraphs = !this.showLimitedParagraphs;
+    this.renderParagraphs();
+  }
+
+  updateShowAllButton() {
+    const story = this.stories[this.currentStoryId];
+    const btn = document.getElementById('showAllParagraphsBtn');
+    
+    if (!story || !story.paragraphs || story.paragraphs.length <= 5) {
+      btn.style.display = 'none';
+      return;
+    }
+
+    btn.style.display = 'inline-block';
+    
+    if (this.showLimitedParagraphs) {
+      const hiddenCount = story.paragraphs.length - 5;
+      btn.textContent = `📋 Show All (${hiddenCount} hidden)`;
+      btn.title = `Show all ${story.paragraphs.length} paragraphs (may affect performance on low-end devices)`;
+    } else {
+      btn.textContent = '📱 Show Last 5 Only';
+      btn.title = 'Show only the last 5 paragraphs for better performance';
+    }
   }
 
   async syncToCloud() {

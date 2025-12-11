@@ -114,6 +114,21 @@ class StorylineApp {
     document.getElementById('addApiKeyBtn').addEventListener('click', () => this.addApiKey());
     document.getElementById('saveAiSettingsBtn').addEventListener('click', () => this.saveAiSettings());
     document.getElementById('testAiBtn').addEventListener('click', () => this.testAiConnection());
+    document.getElementById('refreshModelsBtn').addEventListener('click', () => this.loadAvailableModels());
+    
+    // Handle AI mode changes
+    document.addEventListener('change', (e) => {
+      if (e.target.name === 'aiMode') {
+        this.handleAiModeChange(e.target.value);
+      }
+    });
+    
+    // Handle model selection
+    document.addEventListener('change', (e) => {
+      if (e.target.id === 'customModelSelect') {
+        this.handleModelSelection(e.target.value);
+      }
+    });
 
     // Prevent accidental navigation away from the app
     this.setupNavigationWarning();
@@ -306,9 +321,10 @@ class StorylineApp {
       }
       if (!story.hasOwnProperty('aiSettings')) {
         story.aiSettings = {
-          mode: 'smarter', // 'smarter' or 'faster'
+          mode: 'smarter', // 'smarter', 'faster', or 'custom'
           customInstruction: '',
-          apiKeys: []
+          apiKeys: [],
+          customModel: '' // for custom mode
         };
       }
       // Ensure all paragraphs have progress field
@@ -2302,13 +2318,31 @@ class StorylineApp {
     if (!story) return;
 
     // Load current settings
-    const aiSettings = story.aiSettings || { mode: 'smarter', customInstruction: '', apiKeys: [] };
+    const aiSettings = story.aiSettings || { mode: 'smarter', customInstruction: '', apiKeys: [], customModel: '' };
     
     // Set radio button
-    document.getElementById(aiSettings.mode === 'smarter' ? 'aiModeSmarter' : 'aiModeFaster').checked = true;
+    const modeRadio = document.getElementById(
+      aiSettings.mode === 'smarter' ? 'aiModeSmarter' : 
+      aiSettings.mode === 'faster' ? 'aiModeFaster' : 'aiModeCustom'
+    );
+    if (modeRadio) modeRadio.checked = true;
     
     // Set custom instruction
     document.getElementById('customInstruction').value = aiSettings.customInstruction || '';
+    
+    // Handle custom model section
+    this.handleAiModeChange(aiSettings.mode);
+    
+    // Load models if custom mode and we have API keys
+    if (aiSettings.mode === 'custom' && aiSettings.apiKeys.length > 0) {
+      this.loadAvailableModels().then(() => {
+        // Set selected model after models are loaded
+        if (aiSettings.customModel) {
+          document.getElementById('customModelSelect').value = aiSettings.customModel;
+          this.handleModelSelection(aiSettings.customModel);
+        }
+      });
+    }
     
     // Render API keys
     this.renderApiKeys();
@@ -2373,6 +2407,145 @@ class StorylineApp {
     }
   }
 
+  handleAiModeChange(mode) {
+    const customSection = document.getElementById('customModelSection');
+    if (mode === 'custom') {
+      customSection.style.display = 'block';
+      // Load models if we have API keys
+      const story = this.stories[this.currentStoryId];
+      if (story.aiSettings?.apiKeys?.length > 0) {
+        this.loadAvailableModels();
+      } else {
+        document.getElementById('customModelSelect').innerHTML = '<option value="">Add API keys first</option>';
+      }
+    } else {
+      customSection.style.display = 'none';
+    }
+  }
+
+  async loadAvailableModels() {
+    const story = this.stories[this.currentStoryId];
+    const apiKeys = story.aiSettings?.apiKeys || [];
+    
+    if (apiKeys.length === 0) {
+      document.getElementById('customModelSelect').innerHTML = '<option value="">Add API keys first</option>';
+      return;
+    }
+
+    const select = document.getElementById('customModelSelect');
+    const refreshBtn = document.getElementById('refreshModelsBtn');
+    
+    select.innerHTML = '<option value="">Loading models...</option>';
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = '⏳';
+
+    try {
+      // Use first API key to fetch models
+      const apiKey = apiKeys[0];
+      
+      const response = await fetch('https://api.groq.com/openai/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.data || !Array.isArray(data.data)) {
+        throw new Error('Invalid response format');
+      }
+
+      // Sort models by name and filter for chat models
+      const models = data.data
+        .filter(model => model.id && !model.id.includes('whisper')) // Filter out non-chat models
+        .sort((a, b) => a.id.localeCompare(b.id));
+
+      select.innerHTML = '<option value="">Select a model...</option>';
+      
+      models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = model.id;
+        option.dataset.modelData = JSON.stringify(model);
+        select.appendChild(option);
+      });
+
+      refreshBtn.textContent = '🔄 Refresh';
+      refreshBtn.disabled = false;
+
+    } catch (error) {
+      console.error('Failed to load models:', error);
+      select.innerHTML = '<option value="">Failed to load models</option>';
+      refreshBtn.textContent = '❌ Failed';
+      setTimeout(() => {
+        refreshBtn.textContent = '🔄 Refresh';
+        refreshBtn.disabled = false;
+      }, 2000);
+    }
+  }
+
+  handleModelSelection(modelId) {
+    const select = document.getElementById('customModelSelect');
+    const modelInfo = document.getElementById('modelInfo');
+    
+    if (!modelId) {
+      modelInfo.innerHTML = '<p>Select a model to see details</p>';
+      return;
+    }
+
+    const selectedOption = select.querySelector(`option[value="${modelId}"]`);
+    if (!selectedOption || !selectedOption.dataset.modelData) {
+      modelInfo.innerHTML = '<p>Model information not available</p>';
+      return;
+    }
+
+    try {
+      const modelData = JSON.parse(selectedOption.dataset.modelData);
+      
+      modelInfo.innerHTML = `
+        <div class="model-details">
+          <div class="model-name">${modelData.id}</div>
+          <div class="model-description">
+            ${this.getModelDescription(modelData.id)}
+          </div>
+          <div class="model-specs">
+            <div class="model-spec">
+              <span class="spec-label">Owner</span>
+              <span class="spec-value">${modelData.owned_by || 'Unknown'}</span>
+            </div>
+            <div class="model-spec">
+              <span class="spec-label">Created</span>
+              <span class="spec-value">${modelData.created ? new Date(modelData.created * 1000).toLocaleDateString() : 'Unknown'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      console.error('Error parsing model data:', error);
+      modelInfo.innerHTML = '<p>Error loading model details</p>';
+    }
+  }
+
+  getModelDescription(modelId) {
+    const descriptions = {
+      'llama-3.1-70b-versatile': 'Large, high-quality model with excellent reasoning capabilities. Best for complex tasks.',
+      'llama-3.1-8b-instant': 'Fast, efficient model optimized for quick responses. Good balance of speed and quality.',
+      'llama3-70b-8192': 'Previous generation Llama model with good performance.',
+      'llama3-8b-8192': 'Smaller, faster version of Llama 3.',
+      'mixtral-8x7b-32768': 'Mixture of experts model with strong performance across various tasks.',
+      'gemma-7b-it': 'Google\'s Gemma model optimized for instruction following.',
+      'gemma2-9b-it': 'Updated Gemma model with improved capabilities.'
+    };
+    
+    return descriptions[modelId] || 'Advanced language model for text generation and conversation.';
+  }
+
   saveAiSettings() {
     const story = this.stories[this.currentStoryId];
     
@@ -2382,11 +2555,15 @@ class StorylineApp {
     // Get custom instruction
     const customInstruction = document.getElementById('customInstruction').value.trim();
     
+    // Get custom model if in custom mode
+    const customModel = aiMode === 'custom' ? document.getElementById('customModelSelect').value : '';
+    
     // Update settings
     story.aiSettings = {
       mode: aiMode,
       customInstruction: customInstruction,
-      apiKeys: story.aiSettings?.apiKeys || []
+      apiKeys: story.aiSettings?.apiKeys || [],
+      customModel: customModel
     };
     
     story.updatedAt = new Date().toISOString();
@@ -2560,7 +2737,17 @@ class StorylineApp {
     const apiKey = apiKeys[keyIndex];
     
     // Select model based on mode
-    const model = aiSettings.mode === 'faster' ? 'llama-3.3-8b-instant' : 'llama-3.3-70b-versatile';
+    let model;
+    if (aiSettings.mode === 'custom') {
+      model = aiSettings.customModel || 'llama-3.1-70b-versatile';
+      if (!model) {
+        throw new Error('No custom model selected. Please choose a model in AI Settings.');
+      }
+    } else if (aiSettings.mode === 'faster') {
+      model = 'llama-3.1-8b-instant';
+    } else {
+      model = 'llama-3.1-70b-versatile';
+    }
     
     // Build system prompt
     let systemPrompt = `You are a creative writing assistant helping to complete a story paragraph. Write in a natural, engaging style that flows well with the existing content.`;

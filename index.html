@@ -195,12 +195,29 @@
             <div class="radio-group">
               <label class="radio-option">
                 <input type="radio" name="aiMode" value="smarter" id="aiModeSmarter">
-                <span class="radio-text">🧠 Smarter (but slower)</span>
+                <span class="radio-text">🧠 Smarter (Llama-3.1-70B) - Better quality, slower</span>
               </label>
               <label class="radio-option">
                 <input type="radio" name="aiMode" value="faster" id="aiModeFaster">
-                <span class="radio-text">⚡ Faster (but dumb)</span>
+                <span class="radio-text">⚡ Faster (Llama-3.1-8B-instant) - Quick responses</span>
               </label>
+              <label class="radio-option">
+                <input type="radio" name="aiMode" value="custom" id="aiModeCustom">
+                <span class="radio-text">🎯 Custom Model - Choose specific model</span>
+              </label>
+            </div>
+            
+            <div id="customModelSection" class="custom-model-section" style="display: none;">
+              <label class="setting-label">Select Model</label>
+              <div class="model-selector">
+                <select id="customModelSelect" class="model-select">
+                  <option value="">Loading models...</option>
+                </select>
+                <button id="refreshModelsBtn" class="btn btn-small" type="button">🔄 Refresh</button>
+              </div>
+              <div class="model-info" id="modelInfo">
+                <p>Select a model to see details</p>
+              </div>
             </div>
           </div>
 

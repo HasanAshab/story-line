@@ -93,6 +93,58 @@ class StorylineApp {
         this.closeVersionsModal();
       }
     });
+
+    // Prevent accidental navigation away from the app
+    this.setupNavigationWarning();
+  }
+
+  setupNavigationWarning() {
+    // Show warning when user tries to leave the page (close tab, refresh, navigate away)
+    window.addEventListener('beforeunload', (e) => {
+      // Check if user is actively working on a story
+      if (this.currentStoryId) {
+        let message = '📖 Storyline App - Are you sure you want to leave?';
+        
+        if (this.hasUnsavedChanges && !this.autoSaveEnabled) {
+          message = '⚠️ You have unsaved changes! Are you sure you want to leave without saving?';
+        } else if (this.autoSaveEnabled) {
+          message = '📖 Your work is auto-saved. Are you sure you want to leave Storyline?';
+        } else {
+          message = '📖 Make sure your story is saved before leaving. Continue?';
+        }
+        
+        e.preventDefault();
+        e.returnValue = message; // For older browsers
+        return message;
+      }
+    });
+
+    // Handle browser back/forward navigation within the app
+    window.addEventListener('popstate', (e) => {
+      if (this.currentStoryId) {
+        let confirmMessage = '🔙 Going back to story list?';
+        
+        if (this.hasUnsavedChanges && !this.autoSaveEnabled) {
+          confirmMessage = '⚠️ You have unsaved changes! Save your story before going back?';
+        } else {
+          confirmMessage = '🔙 Return to your story list?';
+        }
+        
+        const confirmLeave = confirm(confirmMessage);
+        if (!confirmLeave) {
+          // Prevent navigation by pushing current state back
+          history.pushState({ view: 'editor', storyId: this.currentStoryId }, '', `#story-${this.currentStoryId}`);
+        } else {
+          // Allow navigation to story list
+          this.showStoryList();
+        }
+      }
+    });
+
+    // Initialize browser history state
+    if (window.history.state === null) {
+      history.pushState({ view: 'list' }, '', '#');
+    }
   }
 
   loadStories() {
@@ -134,14 +186,23 @@ class StorylineApp {
   }
 
   showStoryList() {
+    this.currentStoryId = null; // Clear current story when going back to list
     this.showView('storyListView');
     this.renderStoryList();
+    
+    // Update browser history
+    history.pushState({ view: 'list' }, '', '#');
   }
 
   showStoryEditor(storyId = null) {
     this.currentStoryId = storyId;
     this.showView('storyEditorView');
     this.renderStoryEditor();
+    
+    // Update browser history to handle back button properly
+    if (storyId) {
+      history.pushState({ view: 'editor', storyId: storyId }, '', `#story-${storyId}`);
+    }
   }
 
   renderStoryList() {

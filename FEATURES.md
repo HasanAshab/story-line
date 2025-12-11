@@ -80,6 +80,7 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Local Storage**: All data stored locally in browser
 - **Cache Management**: Manual cache clearing and app updates
 - **Installable**: Can be installed as a native app on devices
+- **Exit Protection**: Game-like warnings when trying to leave the app to prevent data loss
 
 ### Mobile Optimization
 - **Responsive Design**: Adapts to all screen sizes
@@ -108,6 +109,8 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Change Detection**: Tracks unsaved changes with visual indicators
 - **Loading States**: Visual feedback during operations
 - **Error Handling**: Graceful error handling with user feedback
+- **Navigation Protection**: Warns users before leaving the app to prevent accidental data loss
+- **Browser Back Button**: Smart handling of browser navigation with confirmation dialogs
 
 ## 🔧 Technical Features
 

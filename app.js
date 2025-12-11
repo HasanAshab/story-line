@@ -265,8 +265,8 @@ class StorylineApp {
                         </div>
                         <div class="paragraph-controls">
                             <button class="control-btn drag-handle" data-index="${index}">⋮⋮</button>
-                            <button class="control-btn" onclick="app.moveParagraph(${index}, -1)" ${index === 0 ? 'disabled' : ''}>↑</button>
-                            <button class="control-btn" onclick="app.moveParagraph(${index}, 1)" ${index === story.paragraphs.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="control-btn" onclick="app.moveParagraph(${index}, -1)" ${index === 0 ? 'disabled' : ''} title="Move to top">⬆️</button>
+                            <button class="control-btn" onclick="app.moveParagraph(${index}, 1)" ${index === story.paragraphs.length - 1 ? 'disabled' : ''} title="Move to bottom">⬇️</button>
                             <button class="control-btn ${paragraph.notes && paragraph.notes.length > 0 ? 'has-notes' : ''}" onclick="app.showParagraphNoteModal(${index})" title="Add/Edit Notes">📝</button>
                             <button class="control-btn" onclick="app.deleteParagraph(${index})">🗑️</button>
                         </div>
@@ -342,13 +342,18 @@ class StorylineApp {
 
   moveParagraph(index, direction) {
     const story = this.stories[this.currentStoryId];
-    const newIndex = index + direction;
-
-    if (newIndex < 0 || newIndex >= story.paragraphs.length) return;
-
-    const temp = story.paragraphs[index];
-    story.paragraphs[index] = story.paragraphs[newIndex];
-    story.paragraphs[newIndex] = temp;
+    
+    // Remove the paragraph from its current position
+    const paragraph = story.paragraphs.splice(index, 1)[0];
+    
+    // Insert at top (index 0) or bottom (end of array) based on direction
+    if (direction === -1) {
+      // Move to top
+      story.paragraphs.unshift(paragraph);
+    } else {
+      // Move to bottom
+      story.paragraphs.push(paragraph);
+    }
 
     story.updatedAt = new Date().toISOString();
 

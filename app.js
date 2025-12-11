@@ -44,6 +44,7 @@ class StorylineApp {
     document.getElementById('previewBtn').addEventListener('click', () => this.showPreview());
     document.getElementById('editBtn').addEventListener('click', () => this.showEdit());
     document.getElementById('notesBtn').addEventListener('click', () => this.showNotesModal());
+    document.getElementById('aiSettingsBtn').addEventListener('click', () => this.showAiSettingsModal());
 
     // Paragraph actions
     document.getElementById('addParagraphBtn').addEventListener('click', () => this.addParagraph());
@@ -102,6 +103,17 @@ class StorylineApp {
         this.closeVersionsModal();
       }
     });
+
+    // AI Settings modal functionality
+    document.getElementById('closeAiSettingsBtn').addEventListener('click', () => this.closeAiSettingsModal());
+    document.getElementById('aiSettingsModal').addEventListener('click', (e) => {
+      if (e.target.id === 'aiSettingsModal') {
+        this.closeAiSettingsModal();
+      }
+    });
+    document.getElementById('addApiKeyBtn').addEventListener('click', () => this.addApiKey());
+    document.getElementById('saveAiSettingsBtn').addEventListener('click', () => this.saveAiSettings());
+    document.getElementById('testAiBtn').addEventListener('click', () => this.testAiConnection());
 
     // Prevent accidental navigation away from the app
     this.setupNavigationWarning();
@@ -292,6 +304,13 @@ class StorylineApp {
       if (!story.hasOwnProperty('progressData')) {
         story.progressData = {};
       }
+      if (!story.hasOwnProperty('aiSettings')) {
+        story.aiSettings = {
+          mode: 'smarter', // 'smarter' or 'faster'
+          customInstruction: '',
+          apiKeys: []
+        };
+      }
       // Ensure all paragraphs have progress field
       if (story.paragraphs) {
         story.paragraphs.forEach(paragraph => {
@@ -461,6 +480,7 @@ class StorylineApp {
                             <button class="control-btn drag-handle" data-index="${index}">⋮⋮</button>
                             <button class="control-btn" onclick="app.moveParagraph(${index}, -1)" ${index === 0 ? 'disabled' : ''} title="Move to top">⬆️</button>
                             <button class="control-btn" onclick="app.moveParagraph(${index}, 1)" ${index === story.paragraphs.length - 1 ? 'disabled' : ''} title="Move to bottom">⬇️</button>
+                            <button class="control-btn ai-complete-btn" onclick="app.completeParagraphWithAI(${index})" title="Complete with AI">🤖</button>
                             <button class="control-btn ${paragraph.notes && paragraph.notes.length > 0 ? 'has-notes' : ''}" onclick="app.showParagraphNoteModal(${index})" title="Add/Edit Notes">📝</button>
                             <button class="control-btn" onclick="app.deleteParagraph(${index})">🗑️</button>
                         </div>
@@ -2274,6 +2294,319 @@ class StorylineApp {
     if (progressBtn) {
       progressBtn.textContent = `📊 Progress (${stats.percentage}%)`;
     }
+  }
+
+  // AI Settings functionality
+  showAiSettingsModal() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) return;
+
+    // Load current settings
+    const aiSettings = story.aiSettings || { mode: 'smarter', customInstruction: '', apiKeys: [] };
+    
+    // Set radio button
+    document.getElementById(aiSettings.mode === 'smarter' ? 'aiModeSmarter' : 'aiModeFaster').checked = true;
+    
+    // Set custom instruction
+    document.getElementById('customInstruction').value = aiSettings.customInstruction || '';
+    
+    // Render API keys
+    this.renderApiKeys();
+    
+    document.getElementById('aiSettingsModal').style.display = 'flex';
+  }
+
+  closeAiSettingsModal() {
+    document.getElementById('aiSettingsModal').style.display = 'none';
+  }
+
+  renderApiKeys() {
+    const story = this.stories[this.currentStoryId];
+    const apiKeys = story.aiSettings?.apiKeys || [];
+    const container = document.getElementById('apiKeysList');
+    
+    if (apiKeys.length === 0) {
+      container.innerHTML = '<div class="no-api-keys">No API keys added yet. Add your first Groq API key below.</div>';
+      return;
+    }
+    
+    container.innerHTML = apiKeys.map((key, index) => {
+      const maskedKey = key.substring(0, 8) + '...' + key.substring(key.length - 4);
+      return `
+        <div class="api-key-item">
+          <span class="api-key-text">${maskedKey}</span>
+          <button class="api-key-delete" onclick="app.removeApiKey(${index})" title="Remove API key">🗑️</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  addApiKey() {
+    const newKeyInput = document.getElementById('newApiKey');
+    const newKey = newKeyInput.value.trim();
+    
+    if (!newKey) {
+      alert('Please enter an API key');
+      return;
+    }
+    
+    if (!newKey.startsWith('gsk_')) {
+      alert('Invalid Groq API key format. Keys should start with "gsk_"');
+      return;
+    }
+    
+    const story = this.stories[this.currentStoryId];
+    if (!story.aiSettings.apiKeys.includes(newKey)) {
+      story.aiSettings.apiKeys.push(newKey);
+      newKeyInput.value = '';
+      this.renderApiKeys();
+    } else {
+      alert('This API key is already added');
+    }
+  }
+
+  removeApiKey(index) {
+    if (confirm('Remove this API key?')) {
+      const story = this.stories[this.currentStoryId];
+      story.aiSettings.apiKeys.splice(index, 1);
+      this.renderApiKeys();
+    }
+  }
+
+  saveAiSettings() {
+    const story = this.stories[this.currentStoryId];
+    
+    // Get AI mode
+    const aiMode = document.querySelector('input[name="aiMode"]:checked')?.value || 'smarter';
+    
+    // Get custom instruction
+    const customInstruction = document.getElementById('customInstruction').value.trim();
+    
+    // Update settings
+    story.aiSettings = {
+      mode: aiMode,
+      customInstruction: customInstruction,
+      apiKeys: story.aiSettings?.apiKeys || []
+    };
+    
+    story.updatedAt = new Date().toISOString();
+    this.saveStories();
+    
+    // Show feedback
+    const btn = document.getElementById('saveAiSettingsBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '✓ Saved!';
+    btn.style.background = '#4CAF50';
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.background = '';
+    }, 1500);
+  }
+
+  async testAiConnection() {
+    const story = this.stories[this.currentStoryId];
+    const apiKeys = story.aiSettings?.apiKeys || [];
+    
+    if (apiKeys.length === 0) {
+      alert('Please add at least one API key first');
+      return;
+    }
+    
+    const btn = document.getElementById('testAiBtn');
+    const originalText = btn.textContent;
+    btn.textContent = '🔄 Testing...';
+    btn.disabled = true;
+    
+    try {
+      const response = await this.callGroqAPI('Test connection', 'Say "Hello from Groq!" in a friendly way.');
+      
+      if (response) {
+        btn.textContent = '✓ Connected!';
+        btn.style.background = '#4CAF50';
+        alert('✅ AI connection successful!\n\nResponse: ' + response);
+      } else {
+        throw new Error('No response received');
+      }
+    } catch (error) {
+      console.error('AI test failed:', error);
+      btn.textContent = '❌ Failed';
+      btn.style.background = '#f44336';
+      alert('❌ AI connection failed: ' + error.message);
+    }
+    
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.background = '';
+      btn.disabled = false;
+    }, 2000);
+  }
+
+  async completeParagraphWithAI(paragraphIndex) {
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[paragraphIndex];
+    const apiKeys = story.aiSettings?.apiKeys || [];
+    
+    if (apiKeys.length === 0) {
+      alert('Please add Groq API keys in AI Settings first');
+      return;
+    }
+    
+    if (!paragraph.heading && (!paragraph.content || paragraph.content.trim().length < 10)) {
+      alert('Please add a heading or at least 10 characters of draft content to give the AI context');
+      return;
+    }
+    
+    // Find the AI button and show loading state
+    const aiButtons = document.querySelectorAll('.ai-complete-btn');
+    const currentButton = aiButtons[paragraphIndex - (this.showLimitedParagraphs ? Math.max(0, story.paragraphs.length - 5) : 0)];
+    
+    if (currentButton) {
+      currentButton.textContent = '⏳';
+      currentButton.disabled = true;
+    }
+    
+    try {
+      // Build context from story and previous paragraphs
+      const context = this.buildAIContext(story, paragraphIndex);
+      
+      // Call Groq API
+      const completion = await this.callGroqAPI(story.title || 'Untitled Story', context);
+      
+      if (completion) {
+        // Update the paragraph content
+        paragraph.content = (paragraph.content || '') + completion;
+        story.updatedAt = new Date().toISOString();
+        
+        // Save and re-render
+        this.triggerAutoSave();
+        this.renderParagraphs();
+        
+        // Show success feedback
+        if (currentButton) {
+          currentButton.textContent = '✅';
+          setTimeout(() => {
+            const newButtons = document.querySelectorAll('.ai-complete-btn');
+            const newCurrentButton = newButtons[paragraphIndex - (this.showLimitedParagraphs ? Math.max(0, story.paragraphs.length - 5) : 0)];
+            if (newCurrentButton) {
+              newCurrentButton.textContent = '🤖';
+              newCurrentButton.disabled = false;
+            }
+          }, 2000);
+        }
+      }
+    } catch (error) {
+      console.error('AI completion failed:', error);
+      alert('AI completion failed: ' + error.message);
+      
+      if (currentButton) {
+        currentButton.textContent = '❌';
+        setTimeout(() => {
+          currentButton.textContent = '🤖';
+          currentButton.disabled = false;
+        }, 2000);
+      }
+    }
+  }
+
+  buildAIContext(story, currentParagraphIndex) {
+    const currentParagraph = story.paragraphs[currentParagraphIndex];
+    
+    // Get previous 3 paragraphs for context
+    const startIndex = Math.max(0, currentParagraphIndex - 3);
+    const previousParagraphs = story.paragraphs.slice(startIndex, currentParagraphIndex);
+    
+    let context = `Story Title: "${story.title || 'Untitled Story'}"\n\n`;
+    
+    // Add previous paragraphs for context
+    if (previousParagraphs.length > 0) {
+      context += "Previous paragraphs for context:\n";
+      previousParagraphs.forEach((para, index) => {
+        const paraNumber = startIndex + index + 1;
+        if (para.heading) {
+          context += `\nParagraph ${paraNumber} - ${para.heading}:\n${para.content || '[No content yet]'}\n`;
+        } else {
+          context += `\nParagraph ${paraNumber}:\n${para.content || '[No content yet]'}\n`;
+        }
+      });
+      context += "\n";
+    }
+    
+    // Add current paragraph info
+    const currentParaNumber = currentParagraphIndex + 1;
+    context += `Current paragraph ${currentParaNumber} to complete:\n`;
+    if (currentParagraph.heading) {
+      context += `Heading: "${currentParagraph.heading}"\n`;
+    }
+    if (currentParagraph.content) {
+      context += `Draft content: "${currentParagraph.content}"\n`;
+    }
+    
+    context += `\nPlease continue or complete this paragraph. Keep the writing style consistent with the previous paragraphs. Write naturally and engagingly.`;
+    
+    return context;
+  }
+
+  async callGroqAPI(storyTitle, context) {
+    const story = this.stories[this.currentStoryId];
+    const aiSettings = story.aiSettings || {};
+    const apiKeys = aiSettings.apiKeys || [];
+    
+    if (apiKeys.length === 0) {
+      throw new Error('No API keys available');
+    }
+    
+    // Select API key (rotate through them for load balancing)
+    const keyIndex = Math.floor(Math.random() * apiKeys.length);
+    const apiKey = apiKeys[keyIndex];
+    
+    // Select model based on mode
+    const model = aiSettings.mode === 'faster' ? 'llama-3.3-8b-instant' : 'llama-3.3-70b-versatile';
+    
+    // Build system prompt
+    let systemPrompt = `You are a creative writing assistant helping to complete a story paragraph. Write in a natural, engaging style that flows well with the existing content.`;
+    
+    if (aiSettings.customInstruction) {
+      systemPrompt += `\n\nAdditional instructions: ${aiSettings.customInstruction}`;
+    }
+    
+    const requestBody = {
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: context
+        }
+      ],
+      model: model,
+      temperature: 0.7,
+      max_tokens: 500,
+      top_p: 0.9
+    };
+    
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API request failed: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response format from API');
+    }
+    
+    return data.choices[0].message.content.trim();
   }
 }
 

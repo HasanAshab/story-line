@@ -68,6 +68,7 @@
           <button id="progressBtn" class="btn btn-secondary">📊 Progress (0%)</button>
           <button id="progressEditBtn" class="btn btn-secondary" style="display: none;">✏️ Edit</button>
           <button id="notesBtn" class="btn btn-secondary">📝 Notes</button>
+          <button id="aiSettingsBtn" class="btn btn-secondary">🤖 AI Settings</button>
           <button id="saveStoryBtn" class="btn btn-primary">Save</button>
           <button id="deleteStoryBtn" class="btn btn-danger">Delete</button>
         </div>
@@ -175,6 +176,60 @@
         </div>
         <div id="versionsList" class="versions-list">
           <!-- Versions will be rendered here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Settings Modal -->
+  <div id="aiSettingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🤖 AI Preferences</h2>
+        <button id="closeAiSettingsBtn" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="ai-settings-form">
+          <div class="setting-group">
+            <label class="setting-label">AI Mode</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="aiMode" value="smarter" id="aiModeSmarter">
+                <span class="radio-text">🧠 Smarter (but slower)</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="aiMode" value="faster" id="aiModeFaster">
+                <span class="radio-text">⚡ Faster (but dumb)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label" for="customInstruction">Custom Instruction</label>
+            <textarea id="customInstruction" class="setting-textarea" 
+                      placeholder="Add custom instructions that will be included in every AI request (e.g., writing style, tone, specific requirements)..."></textarea>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">API Keys</label>
+            <div class="api-keys-section">
+              <div id="apiKeysList" class="api-keys-list">
+                <!-- API keys will be rendered here -->
+              </div>
+              <div class="add-api-key-section">
+                <input type="password" id="newApiKey" class="setting-input" placeholder="Enter Groq API key...">
+                <button id="addApiKeyBtn" class="btn btn-small">Add Key</button>
+              </div>
+              <div class="api-keys-info">
+                <p>💡 Multiple API keys will be used in rotation for better rate limiting. Get your free API key from <a href="https://console.groq.com/keys" target="_blank">Groq Console</a>.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="setting-actions">
+            <button id="saveAiSettingsBtn" class="btn btn-primary">Save Settings</button>
+            <button id="testAiBtn" class="btn btn-secondary">Test AI Connection</button>
+          </div>
         </div>
       </div>
     </div>

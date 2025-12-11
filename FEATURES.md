@@ -5,6 +5,14 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 
 ## 🚀 Core Features
 
+### AI-Powered Writing Assistant
+- **Smart Paragraph Completion**: AI-powered paragraph completion using Groq's Llama models
+- **Context-Aware Suggestions**: AI considers story title, previous paragraphs, and current content for relevant completions
+- **Dual AI Modes**: Choose between Smarter (Llama-3.1-70B) for quality or Faster (Llama-3.1-8B-instant) for speed
+- **Custom Instructions**: Set personalized writing style and tone preferences for AI completions
+- **Multiple API Keys**: Load balance across multiple Groq API keys for better rate limiting
+- **Intelligent Context**: AI receives the last 3 paragraphs plus current paragraph for better story continuity
+
 ### Story Management
 - **Create New Stories**: Start fresh stories with customizable titles
 - **Story List View**: Browse all your stories with previews and metadata
@@ -57,6 +65,7 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Password Protection**: Secure uploads with password verification
 - **Timestamp Tracking**: Monitors last sync times for each story
 - **Progress Sync**: Progress tracking data is included in cloud synchronization
+- **AI Settings Sync**: AI preferences and API keys are preserved during cloud sync operations
 
 ### Version Management
 - **Automatic Versioning**: Keeps last 5 backup versions automatically when uploading

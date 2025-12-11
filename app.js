@@ -859,8 +859,8 @@ class StorylineApp {
         }
       }
       
-      // Keep only the last 3 versions
-      versions = versions.slice(0, 3);
+      // Keep only the last 5 versions
+      versions = versions.slice(0, 5);
 
       await setDoc(userDocRef, {
         stories: this.stories,

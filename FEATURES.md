@@ -59,11 +59,11 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Progress Sync**: Progress tracking data is included in cloud synchronization
 
 ### Version Management
-- **Automatic Versioning**: Keeps last 3 backup versions automatically when uploading
+- **Automatic Versioning**: Keeps last 5 backup versions automatically when uploading
 - **Version History**: View all available backup versions with timestamps and statistics
 - **Version Preview**: Preview the contents of any backup version before restoring
 - **Version Restore**: Restore any backup version with multiple safety confirmations
-- **Smart Backup**: Each upload creates a new version while maintaining the 3-version limit
+- **Smart Backup**: Each upload creates a new version while maintaining the 5-version limit
 
 ### Sync Safety
 - **Data Comparison**: Compares local vs cloud versions before sync

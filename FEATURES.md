@@ -81,6 +81,8 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Cache Management**: Manual cache clearing and app updates
 - **Installable**: Can be installed as a native app on devices
 - **Exit Protection**: Game-like warnings when trying to leave the app to prevent data loss
+- **PWA Lifecycle Management**: Smart handling of app backgrounding, task switching, and PWA-specific navigation
+- **Auto-save on Background**: Automatically saves work when PWA goes to background or loses focus
 
 ### Mobile Optimization
 - **Responsive Design**: Adapts to all screen sizes

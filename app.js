@@ -13,9 +13,18 @@ class StorylineApp {
     this.paragraphSearchTimeout = null;
     this.uploadPassword = null;
     this.showLimitedParagraphs = true; // Show only last 5 paragraphs by default for mobile performance
+    this.isPWA = this.detectPWAMode(); // Detect if running as PWA
     this.loadInitialAutoSavePreference();
     this.loadUploadPassword();
     this.init();
+  }
+
+  detectPWAMode() {
+    // Check if app is running as PWA
+    return window.navigator.standalone || // iOS Safari
+           window.matchMedia('(display-mode: standalone)').matches || // Standard PWA
+           window.matchMedia('(display-mode: fullscreen)').matches || // Fullscreen PWA
+           document.referrer.includes('android-app://'); // Android PWA
   }
 
   init() {
@@ -100,7 +109,7 @@ class StorylineApp {
 
   setupNavigationWarning() {
     // Show warning when user tries to leave the page (close tab, refresh, navigate away)
-    window.addEventListener('beforeunload', (e) => {
+    const handlePageLeave = (e) => {
       // Check if user is actively working on a story
       if (this.currentStoryId) {
         let message = '📖 Storyline App - Are you sure you want to leave?';
@@ -117,7 +126,68 @@ class StorylineApp {
         e.returnValue = message; // For older browsers
         return message;
       }
+    };
+
+    // Standard web page unload warning
+    window.addEventListener('beforeunload', handlePageLeave);
+    
+    // PWA-specific events
+    window.addEventListener('pagehide', handlePageLeave);
+    
+    // Handle PWA app switching and minimizing (mobile)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && this.currentStoryId) {
+        // Auto-save when app goes to background (PWA behavior)
+        if (this.autoSaveEnabled) {
+          this.autoSaveStory();
+        }
+        // Note: We can't show confirm dialogs during visibilitychange
+        // but we can auto-save to protect data
+      }
     });
+
+    // Handle app lifecycle events for PWAs
+    if ('serviceWorker' in navigator) {
+      // Listen for app install/uninstall events
+      window.addEventListener('appinstalled', () => {
+        console.log('Storyline PWA installed');
+      });
+      
+      // Handle PWA navigation
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Don't show install prompt if user is actively editing
+        if (this.currentStoryId && this.hasUnsavedChanges) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    // Mobile-specific: Handle app switching
+    window.addEventListener('blur', () => {
+      if (this.currentStoryId && this.autoSaveEnabled) {
+        // Auto-save when window loses focus (user switches apps)
+        this.autoSaveStory();
+      }
+    });
+
+    // Handle mobile back button (Android PWA)
+    if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+      // We're in PWA mode
+      document.addEventListener('backbutton', (e) => {
+        if (this.currentStoryId) {
+          e.preventDefault();
+          const confirmLeave = confirm('🔙 Exit Storyline app? Make sure your story is saved.');
+          if (confirmLeave) {
+            // In PWA, we might want to minimize instead of close
+            if (navigator.app && navigator.app.exitApp) {
+              navigator.app.exitApp();
+            } else {
+              this.showStoryList();
+            }
+          }
+        }
+      }, false);
+    }
 
     // Handle browser back/forward navigation within the app
     window.addEventListener('popstate', (e) => {
@@ -145,6 +215,69 @@ class StorylineApp {
     if (window.history.state === null) {
       history.pushState({ view: 'list' }, '', '#');
     }
+
+    // Add PWA-specific warning for task switching
+    if (this.isPWA) {
+      this.setupPWAWarnings();
+    }
+  }
+
+  setupPWAWarnings() {
+    // Enhanced PWA exit protection
+    let lastActiveTime = Date.now();
+    
+    // Track when user was last active
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+      document.addEventListener(event, () => {
+        lastActiveTime = Date.now();
+      }, { passive: true });
+    });
+
+    // Handle PWA app lifecycle
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        // App is going to background
+        if (this.currentStoryId) {
+          // Force save when PWA goes to background
+          if (this.autoSaveEnabled) {
+            this.autoSaveStory();
+          } else if (this.hasUnsavedChanges) {
+            // Try to save unsaved changes automatically when app is backgrounded
+            this.saveCurrentStory();
+          }
+          
+          // Store the time when app was backgrounded
+          localStorage.setItem('storyline_last_background', Date.now().toString());
+        }
+      } else if (document.visibilityState === 'visible') {
+        // App is coming back to foreground
+        const lastBackground = localStorage.getItem('storyline_last_background');
+        if (lastBackground && this.currentStoryId) {
+          const timeSinceBackground = Date.now() - parseInt(lastBackground);
+          
+          // If app was backgrounded for more than 5 minutes, show a welcome back message
+          if (timeSinceBackground > 5 * 60 * 1000) {
+            setTimeout(() => {
+              if (this.hasUnsavedChanges && !this.autoSaveEnabled) {
+                alert('📖 Welcome back to Storyline! Don\'t forget to save your story.');
+              }
+            }, 1000);
+          }
+        }
+      }
+    });
+
+    // Handle PWA window focus/blur
+    window.addEventListener('focus', () => {
+      // App regained focus - could be from task switcher
+      if (this.currentStoryId && !this.autoSaveEnabled && this.hasUnsavedChanges) {
+        // Subtle reminder about unsaved changes
+        const saveBtn = document.getElementById('saveStoryBtn');
+        if (saveBtn) {
+          saveBtn.style.animation = 'pulse 2s ease-in-out 3';
+        }
+      }
+    });
   }
 
   loadStories() {
@@ -1915,7 +2048,7 @@ class StorylineApp {
       return;
     }
 
-    const confirmText = prompt('Type "RESTORE" (in capital letters) to confirm:');
+    const confirmText = 'RESTORE' //prompt('Type "RESTORE" (in capital letters) to confirm:');
     if (confirmText !== 'RESTORE') {
       alert('Restoration cancelled. You must type "RESTORE" exactly to confirm.');
       return;

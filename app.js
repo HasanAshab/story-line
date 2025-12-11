@@ -373,18 +373,17 @@ class StorylineApp {
     story.title = title || 'Untitled Story';
 
     // Update paragraph content from current form state
-    const headingInputs = document.querySelectorAll('.paragraph-heading');
-    const contentInputs = document.querySelectorAll('.paragraph-content');
-
-    headingInputs.forEach((input, index) => {
-      if (story.paragraphs[index]) {
-        story.paragraphs[index].heading = input.value;
-      }
-    });
-
-    contentInputs.forEach((input, index) => {
-      if (story.paragraphs[index]) {
-        story.paragraphs[index].content = input.value;
+    // We need to get the actual indices from the DOM elements since we might be in limited view
+    const paragraphItems = document.querySelectorAll('.paragraph-item');
+    
+    paragraphItems.forEach((item) => {
+      const actualIndex = parseInt(item.getAttribute('data-index'));
+      const headingInput = item.querySelector('.paragraph-heading');
+      const contentInput = item.querySelector('.paragraph-content');
+      
+      if (story.paragraphs[actualIndex] && headingInput && contentInput) {
+        story.paragraphs[actualIndex].heading = headingInput.value;
+        story.paragraphs[actualIndex].content = contentInput.value;
       }
     });
 
@@ -862,18 +861,17 @@ class StorylineApp {
     story.title = title || 'Untitled Story';
 
     // Update paragraph content from current form state
-    const headingInputs = document.querySelectorAll('.paragraph-heading');
-    const contentInputs = document.querySelectorAll('.paragraph-content');
-
-    headingInputs.forEach((input, index) => {
-      if (story.paragraphs[index]) {
-        story.paragraphs[index].heading = input.value;
-      }
-    });
-
-    contentInputs.forEach((input, index) => {
-      if (story.paragraphs[index]) {
-        story.paragraphs[index].content = input.value;
+    // We need to get the actual indices from the DOM elements since we might be in limited view
+    const paragraphItems = document.querySelectorAll('.paragraph-item');
+    
+    paragraphItems.forEach((item) => {
+      const actualIndex = parseInt(item.getAttribute('data-index'));
+      const headingInput = item.querySelector('.paragraph-heading');
+      const contentInput = item.querySelector('.paragraph-content');
+      
+      if (story.paragraphs[actualIndex] && headingInput && contentInput) {
+        story.paragraphs[actualIndex].heading = headingInput.value;
+        story.paragraphs[actualIndex].content = contentInput.value;
       }
     });
 
@@ -1143,18 +1141,17 @@ class StorylineApp {
     story.title = title || 'Untitled Story';
 
     // Update paragraph content from current form state
-    const headingInputs = document.querySelectorAll('.paragraph-heading');
-    const contentInputs = document.querySelectorAll('.paragraph-content');
-
-    headingInputs.forEach((input, index) => {
-      if (story.paragraphs[index]) {
-        story.paragraphs[index].heading = input.value;
-      }
-    });
-
-    contentInputs.forEach((input, index) => {
-      if (story.paragraphs[index]) {
-        story.paragraphs[index].content = input.value;
+    // We need to get the actual indices from the DOM elements since we might be in limited view
+    const paragraphItems = document.querySelectorAll('.paragraph-item');
+    
+    paragraphItems.forEach((item) => {
+      const actualIndex = parseInt(item.getAttribute('data-index'));
+      const headingInput = item.querySelector('.paragraph-heading');
+      const contentInput = item.querySelector('.paragraph-content');
+      
+      if (story.paragraphs[actualIndex] && headingInput && contentInput) {
+        story.paragraphs[actualIndex].heading = headingInput.value;
+        story.paragraphs[actualIndex].content = contentInput.value;
       }
     });
 

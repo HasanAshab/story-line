@@ -43,8 +43,36 @@
       <!-- Story List View -->
       <div id="storyListView" class="view active">
         <div class="sync-controls">
-          <button id="syncToCloudBtn" class="btn btn-sync">⬆️ Upload</button>
-          <button id="syncFromCloudBtn" class="btn btn-sync">⬇️ Download</button>
+          <!-- Upload Dropdown -->
+          <div class="sync-dropdown">
+            <button id="syncToCloudBtn" class="btn btn-sync dropdown-toggle">⬆️ Upload</button>
+            <div id="uploadModeMenu" class="sync-dropdown-menu">
+              <button class="sync-dropdown-item" onclick="app.syncToCloud('replace')">
+                🔄 Replace Mode
+                <span class="mode-description">Overwrite cloud with local stories</span>
+              </button>
+              <button class="sync-dropdown-item" onclick="app.syncToCloud('merge')">
+                🤝 Merge Mode
+                <span class="mode-description">Keep latest version of each story</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Download Dropdown -->
+          <div class="sync-dropdown">
+            <button id="syncFromCloudBtn" class="btn btn-sync dropdown-toggle">⬇️ Download</button>
+            <div id="downloadModeMenu" class="sync-dropdown-menu">
+              <button class="sync-dropdown-item" onclick="app.syncFromCloud('replace')">
+                🔄 Replace Mode
+                <span class="mode-description">Overwrite local with cloud stories</span>
+              </button>
+              <button class="sync-dropdown-item" onclick="app.syncFromCloud('merge')">
+                🤝 Merge Mode
+                <span class="mode-description">Keep latest version of each story</span>
+              </button>
+            </div>
+          </div>
+          
           <button id="manageVersionsBtn" class="btn btn-sync">📋 Versions</button>
           <button id="clearCacheBtn" class="btn btn-cache">⏫ Update App</button>
         </div>

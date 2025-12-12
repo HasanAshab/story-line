@@ -65,11 +65,14 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 ## ☁️ Cloud Sync Features
 
 ### Data Synchronization
-- **Upload to Cloud**: Sync local stories to Firebase cloud storage
-- **Download from Cloud**: Retrieve stories from cloud to local device
+- **Dual Sync Modes**: Choose between Replace mode (overwrite) or Merge mode (keep latest versions)
+- **Smart Merging**: Automatically keeps the most recent version of each story when merging
+- **Team Collaboration**: Merge mode enables multiple users to work on different stories simultaneously
+- **Upload to Cloud**: Sync local stories to Firebase cloud storage with mode selection
+- **Download from Cloud**: Retrieve stories from cloud to local device with merge options
 - **Conflict Detection**: Warns about potential data loss before sync operations
 - **Password Protection**: Secure uploads with password verification
-- **Timestamp Tracking**: Monitors last sync times for each story
+- **Timestamp Tracking**: Monitors last sync times for each story and uses them for merge decisions
 - **Progress Sync**: Progress tracking data is included in cloud synchronization
 - **AI Settings Sync**: AI preferences and API keys are preserved during cloud sync operations
 
@@ -81,12 +84,16 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Smart Backup**: Each upload creates a new version while maintaining the 5-version limit
 
 ### Sync Safety
-- **Data Comparison**: Compares local vs cloud versions before sync
-- **Length Validation**: Checks content length differences
-- **Date Verification**: Compares modification timestamps
+- **Mode Selection**: Clear dropdown menus to choose sync behavior before operation
+- **Story Count Protection**: Warns when Replace mode would delete stories due to count differences
+- **Smart Warnings**: No data loss warnings in Merge mode (since it preserves all data)
+- **Data Comparison**: Compares local vs cloud versions before sync in Replace mode
+- **Length Validation**: Checks content length differences for potential data loss
+- **Date Verification**: Compares modification timestamps for merge decisions
 - **User Confirmation**: Multiple confirmation dialogs for destructive operations
 - **Version Rollback**: Safe restoration with multiple confirmation steps
 - **Backup Protection**: Automatic backup creation before any destructive operation
+- **Merge Intelligence**: Automatically resolves conflicts by keeping the most recently updated version
 
 ## 📱 Progressive Web App Features
 

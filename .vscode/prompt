@@ -1,3 +1,17 @@
 1. load only the peras which are on screen
 2. merge mode
 3. Storylines sessions
+4. manual backups
+
+I want a change to the core system. 
+Now the hierarchy will be:
+Storyline -> Sessions -> Peragraphs
+
+Note: there is already data exist on localstorage,
+migrate gracefully
+
+I may:
+1. also reorder sessions
+2. On each sessions 
+    a) show the ending (the heading of next sessions first pera)
+    b) show the Starting (the heading of prev sessions last pera)

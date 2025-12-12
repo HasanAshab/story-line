@@ -61,9 +61,15 @@ class StorylineApp {
     document.getElementById('progressBtn').addEventListener('click', () => this.showProgress());
     document.getElementById('progressEditBtn').addEventListener('click', () => this.showEdit());
 
-    // Sync actions
-    document.getElementById('syncToCloudBtn').addEventListener('click', () => this.syncToCloud());
-    document.getElementById('syncFromCloudBtn').addEventListener('click', () => this.syncFromCloud());
+    // Sync actions - now handle dropdown toggles
+    document.getElementById('syncToCloudBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleSyncDropdown('upload');
+    });
+    document.getElementById('syncFromCloudBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleSyncDropdown('download');
+    });
     document.getElementById('manageVersionsBtn').addEventListener('click', () => this.showVersionsModal());
 
     // Auto-save toggle
@@ -798,6 +804,26 @@ class StorylineApp {
     this.renderParagraphs();
   }
 
+  // Sync Dropdown functionality
+  toggleSyncDropdown(type) {
+    this.hideSyncDropdowns();
+    
+    const menuId = type === 'upload' ? 'uploadModeMenu' : 'downloadModeMenu';
+    const menu = document.getElementById(menuId);
+    
+    if (menu) {
+      menu.classList.add('show');
+    }
+  }
+
+  hideSyncDropdowns() {
+    const uploadMenu = document.getElementById('uploadModeMenu');
+    const downloadMenu = document.getElementById('downloadModeMenu');
+    
+    if (uploadMenu) uploadMenu.classList.remove('show');
+    if (downloadMenu) downloadMenu.classList.remove('show');
+  }
+
   toggleParagraphsView() {
     this.showLimitedParagraphs = !this.showLimitedParagraphs;
     this.renderParagraphs();
@@ -824,14 +850,18 @@ class StorylineApp {
     }
   }
 
-  async syncToCloud() {
+  async syncToCloud(mode = 'replace') {
+    // Hide sync dropdowns
+    this.hideSyncDropdowns();
+    
     // Password verification first
     if (!this.verifyUploadPassword()) {
       return;
     }
 
-    // First confirmation
-    const confirmSync = confirm('This will upload your local stories to the cloud. Continue?');
+    // First confirmation with mode info
+    const modeText = mode === 'merge' ? 'merge your local stories with cloud data and upload the result' : 'upload your local stories to the cloud (replacing cloud data)';
+    const confirmSync = confirm(`This will ${modeText}. Continue?`);
     if (!confirmSync) {
       return;
     }
@@ -859,40 +889,75 @@ class StorylineApp {
         cloudStories = data.stories || {};
       }
 
-      // Compare local vs cloud data
-      const conflicts = this.compareStoriesForUpload(this.stories, cloudStories);
-      
-      if (conflicts.length > 0) {
-        let warningMessage = 'WARNING: Potential data loss detected!\n\n';
-        warningMessage += 'The following cloud stories are newer or longer than your local versions:\n\n';
+      // Only check for conflicts in replace mode (merge mode preserves all data)
+      if (mode === 'replace') {
+        // Check story count difference
+        const localCount = Object.keys(this.stories).length;
+        const cloudCount = Object.keys(cloudStories).length;
         
-        conflicts.forEach(conflict => {
-          warningMessage += `• "${conflict.title}"\n`;
-          if (conflict.dateConflict) {
-            warningMessage += `  - Cloud version is newer (${new Date(conflict.cloudDate).toLocaleString()})\n`;
+        if (localCount < cloudCount) {
+          const storyDifference = cloudCount - localCount;
+          const countWarning = confirm(
+            `⚠️ STORY COUNT WARNING!\n\n` +
+            `Cloud has ${storyDifference} more ${storyDifference === 1 ? 'story' : 'stories'} than your local device.\n` +
+            `Local: ${localCount} stories\n` +
+            `Cloud: ${cloudCount} stories\n\n` +
+            `Uploading in Replace mode will DELETE ${storyDifference} ${storyDifference === 1 ? 'story' : 'stories'} from the cloud!\n\n` +
+            `Consider using Merge mode instead to preserve all stories.\n\n` +
+            `Do you still want to proceed with Replace mode?`
+          );
+          
+          if (!countWarning) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
           }
-          if (conflict.lengthConflict) {
-            warningMessage += `  - Cloud version is longer (${conflict.cloudLength} vs ${conflict.localLength} characters)\n`;
+        }
+        
+        // Compare local vs cloud data for content conflicts
+        const conflicts = this.compareStoriesForUpload(this.stories, cloudStories);
+        
+        if (conflicts.length > 0) {
+          let warningMessage = 'WARNING: Potential data loss detected!\n\n';
+          warningMessage += 'The following cloud stories are newer or longer than your local versions:\n\n';
+          
+          conflicts.forEach(conflict => {
+            warningMessage += `• "${conflict.title}"\n`;
+            if (conflict.dateConflict) {
+              warningMessage += `  - Cloud version is newer (${new Date(conflict.cloudDate).toLocaleString()})\n`;
+            }
+            if (conflict.lengthConflict) {
+              warningMessage += `  - Cloud version is longer (${conflict.cloudLength} vs ${conflict.localLength} characters)\n`;
+            }
+            warningMessage += '\n';
+          });
+          
+          warningMessage += 'Uploading will overwrite these cloud stories with your local versions.\n\n';
+          warningMessage += 'Do you still want to proceed?';
+          
+          const proceedAnyway = confirm(warningMessage);
+          if (!proceedAnyway) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
           }
-          warningMessage += '\n';
-        });
-        
-        warningMessage += 'Uploading will overwrite these cloud stories with your local versions.\n\n';
-        warningMessage += 'Do you still want to proceed?';
-        
-        const proceedAnyway = confirm(warningMessage);
-        if (!proceedAnyway) {
-          btn.textContent = originalText;
-          btn.disabled = false;
-          return;
         }
       }
 
       // Proceed with upload
       btn.textContent = '☁️ Uploading...';
       
+      // Prepare stories for upload based on mode
+      let storiesToUpload = { ...this.stories };
+      
+      if (mode === 'merge') {
+        // Merge mode: combine local and cloud stories, keeping the latest version of each
+        storiesToUpload = this.mergeStories(this.stories, cloudStories);
+        btn.textContent = '🤝 Merging & Uploading...';
+      }
+      
       // Update timestamps for all stories being uploaded
-      Object.values(this.stories).forEach(story => {
+      Object.values(storiesToUpload).forEach(story => {
         story.lastSyncAt = new Date().toISOString();
       });
 
@@ -918,10 +983,15 @@ class StorylineApp {
       versions = versions.slice(0, 5);
 
       await setDoc(userDocRef, {
-        stories: this.stories,
+        stories: storiesToUpload,
         lastSync: new Date().toISOString(),
         versions: versions
       });
+      
+      // Update local stories if we merged
+      if (mode === 'merge') {
+        this.stories = storiesToUpload;
+      }
 
       this.saveStories(); // Save the updated timestamps locally
 
@@ -946,9 +1016,13 @@ class StorylineApp {
     }
   }
 
-  async syncFromCloud() {
-    // First confirmation
-    const confirmSync = confirm('This will download stories from the cloud. Continue?');
+  async syncFromCloud(mode = 'replace') {
+    // Hide sync dropdowns
+    this.hideSyncDropdowns();
+    
+    // First confirmation with mode info
+    const modeText = mode === 'merge' ? 'merge with' : 'replace';
+    const confirmSync = confirm(`This will ${modeText} your local stories with cloud data. Continue?`);
     if (!confirmSync) {
       return;
     }
@@ -981,44 +1055,79 @@ class StorylineApp {
 
       const cloudStories = data.stories;
 
-      // Compare cloud vs local data
-      const conflicts = this.compareStoriesForDownload(cloudStories, this.stories);
-      
-      if (conflicts.length > 0) {
-        let warningMessage = 'WARNING: Potential data loss detected!\n\n';
-        warningMessage += 'The following local stories are newer or longer than their cloud versions:\n\n';
+      // Only check for conflicts in replace mode (merge mode preserves all data)
+      if (mode === 'replace') {
+        // Check story count difference
+        const localCount = Object.keys(this.stories).length;
+        const cloudCount = Object.keys(cloudStories).length;
         
-        conflicts.forEach(conflict => {
-          warningMessage += `• "${conflict.title}"\n`;
-          if (conflict.dateConflict) {
-            warningMessage += `  - Local version is newer (${new Date(conflict.localDate).toLocaleString()})\n`;
+        if (cloudCount < localCount) {
+          const storyDifference = localCount - cloudCount;
+          const countWarning = confirm(
+            `⚠️ STORY COUNT WARNING!\n\n` +
+            `Your local device has ${storyDifference} more ${storyDifference === 1 ? 'story' : 'stories'} than the cloud.\n` +
+            `Local: ${localCount} stories\n` +
+            `Cloud: ${cloudCount} stories\n\n` +
+            `Downloading in Replace mode will DELETE ${storyDifference} local ${storyDifference === 1 ? 'story' : 'stories'}!\n\n` +
+            `Consider using Merge mode instead to preserve all stories.\n\n` +
+            `Do you still want to proceed with Replace mode?`
+          );
+          
+          if (!countWarning) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
           }
-          if (conflict.lengthConflict) {
-            warningMessage += `  - Local version is longer (${conflict.localLength} vs ${conflict.cloudLength} characters)\n`;
+        }
+        
+        // Compare cloud vs local data for content conflicts
+        const conflicts = this.compareStoriesForDownload(cloudStories, this.stories);
+        
+        if (conflicts.length > 0) {
+          let warningMessage = 'WARNING: Potential data loss detected!\n\n';
+          warningMessage += 'The following local stories are newer or longer than their cloud versions:\n\n';
+          
+          conflicts.forEach(conflict => {
+            warningMessage += `• "${conflict.title}"\n`;
+            if (conflict.dateConflict) {
+              warningMessage += `  - Local version is newer (${new Date(conflict.localDate).toLocaleString()})\n`;
+            }
+            if (conflict.lengthConflict) {
+              warningMessage += `  - Local version is longer (${conflict.localLength} vs ${conflict.cloudLength} characters)\n`;
+            }
+            warningMessage += '\n';
+          });
+          
+          warningMessage += 'Downloading will overwrite these local stories with cloud versions.\n\n';
+          warningMessage += 'Do you still want to proceed?';
+          
+          const proceedAnyway = confirm(warningMessage);
+          if (!proceedAnyway) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
           }
-          warningMessage += '\n';
-        });
-        
-        warningMessage += 'Downloading will overwrite these local stories with cloud versions.\n\n';
-        warningMessage += 'Do you still want to proceed?';
-        
-        const proceedAnyway = confirm(warningMessage);
-        if (!proceedAnyway) {
-          btn.textContent = originalText;
-          btn.disabled = false;
-          return;
         }
       }
 
       // Proceed with download
       btn.textContent = '📥 Downloading...';
       
-      // Update timestamps for all stories being downloaded
-      Object.values(cloudStories).forEach(story => {
+      // Prepare stories based on mode
+      let storiesToKeep = { ...cloudStories };
+      
+      if (mode === 'merge') {
+        // Merge mode: combine cloud and local stories, keeping the latest version of each
+        storiesToKeep = this.mergeStories(cloudStories, this.stories);
+        btn.textContent = '🤝 Merging & Downloading...';
+      }
+      
+      // Update timestamps for all stories
+      Object.values(storiesToKeep).forEach(story => {
         story.lastSyncAt = new Date().toISOString();
       });
 
-      this.stories = cloudStories;
+      this.stories = storiesToKeep;
       this.saveStories();
       this.renderStoryList();
 
@@ -1757,6 +1866,34 @@ class StorylineApp {
     });
     
     return conflicts;
+  }
+
+  // Merge stories from two sources, keeping the latest version of each
+  mergeStories(primaryStories, secondaryStories) {
+    const merged = { ...primaryStories };
+    
+    // Go through secondary stories and add/update based on timestamps
+    Object.keys(secondaryStories).forEach(storyId => {
+      const secondaryStory = secondaryStories[storyId];
+      const primaryStory = merged[storyId];
+      
+      if (!primaryStory) {
+        // Story doesn't exist in primary, add it
+        merged[storyId] = { ...secondaryStory };
+      } else {
+        // Story exists in both, compare timestamps to keep the latest
+        const primaryDate = new Date(primaryStory.updatedAt || primaryStory.createdAt);
+        const secondaryDate = new Date(secondaryStory.updatedAt || secondaryStory.createdAt);
+        
+        if (secondaryDate > primaryDate) {
+          // Secondary story is newer, use it
+          merged[storyId] = { ...secondaryStory };
+        }
+        // Otherwise keep the primary story (it's newer or same age)
+      }
+    });
+    
+    return merged;
   }
 
   // Notes functionality
@@ -2988,6 +3125,9 @@ class StorylineApp {
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.advanced-dropdown') && !e.target.closest('.copy-options-dropdown')) {
         this.hideAllDropdowns();
+      }
+      if (!e.target.closest('.sync-dropdown')) {
+        this.hideSyncDropdowns();
       }
     });
   }

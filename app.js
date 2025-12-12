@@ -140,6 +140,9 @@ class StorylineApp {
     
     // Setup keyboard shortcuts
     this.setupKeyboardShortcuts();
+    
+    // Setup smart sticky navigation
+    this.setupSmartStickyNavigation();
   }
 
   setupNavigationWarning() {
@@ -526,6 +529,11 @@ class StorylineApp {
     this.initMobileDragAndDrop();
     this.initAutoResize();
     this.updateShowAllButton();
+    
+    // Update sticky button visibility after rendering
+    setTimeout(() => {
+      this.updateStickyButtonsVisibility();
+    }, 100);
   }
 
   addParagraph() {
@@ -2882,6 +2890,11 @@ class StorylineApp {
       targetElement.classList.remove('jump-highlight');
     }, 2000);
     
+    // Update sticky button visibility after scroll
+    setTimeout(() => {
+      this.updateStickyButtonsVisibility();
+    }, 500);
+    
     // If paragraph is collapsed, expand it
     const story = this.stories[this.currentStoryId];
     if (story.paragraphs[paragraphIndex].collapsed) {
@@ -2924,6 +2937,10 @@ class StorylineApp {
     const stickyNav = document.getElementById('stickyNavigation');
     if (stickyNav) {
       stickyNav.style.display = 'flex';
+      // Initial update of button visibility
+      setTimeout(() => {
+        this.updateStickyButtonsVisibility();
+      }, 100);
     }
   }
 
@@ -2962,6 +2979,89 @@ class StorylineApp {
         this.jumpToBottom();
       }
     });
+  }
+
+  setupSmartStickyNavigation() {
+    let scrollTimeout;
+    
+    const handleScroll = () => {
+      // Clear existing timeout to debounce scroll events
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
+      scrollTimeout = setTimeout(() => {
+        this.updateStickyButtonsVisibility();
+      }, 100); // Debounce scroll events
+    };
+    
+    // Listen to scroll events on the main content area
+    window.addEventListener('scroll', handleScroll);
+    
+    // Also listen to scroll events on the paragraphs container
+    const paragraphsList = document.getElementById('paragraphsList');
+    if (paragraphsList) {
+      paragraphsList.addEventListener('scroll', handleScroll);
+    }
+  }
+
+  updateStickyButtonsVisibility() {
+    // Only update when in story editor
+    if (!this.currentStoryId) {
+      return;
+    }
+    
+    const topBtn = document.getElementById('jumpToTopBtn');
+    const bottomBtn = document.getElementById('jumpToBottomBtn');
+    
+    if (!topBtn || !bottomBtn) {
+      return;
+    }
+    
+    // Get scroll information
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    
+    // Calculate scroll position as percentage
+    const scrollPercentage = scrollTop / (documentHeight - windowHeight);
+    
+    // Define thresholds
+    const topThreshold = 0.1;    // Show top button when more than 10% scrolled down
+    const bottomThreshold = 0.9; // Show bottom button when less than 90% scrolled down
+    
+    // Determine which buttons to show
+    const showTopButton = scrollPercentage > topThreshold;
+    const showBottomButton = scrollPercentage < bottomThreshold;
+    
+    // Update button visibility with smooth transitions
+    if (showTopButton) {
+      topBtn.style.display = 'flex';
+      topBtn.style.opacity = '1';
+      topBtn.style.transform = 'scale(1)';
+    } else {
+      topBtn.style.opacity = '0';
+      topBtn.style.transform = 'scale(0.8)';
+      setTimeout(() => {
+        if (topBtn.style.opacity === '0') {
+          topBtn.style.display = 'none';
+        }
+      }, 200);
+    }
+    
+    if (showBottomButton) {
+      bottomBtn.style.display = 'flex';
+      bottomBtn.style.opacity = '1';
+      bottomBtn.style.transform = 'scale(1)';
+    } else {
+      bottomBtn.style.opacity = '0';
+      bottomBtn.style.transform = 'scale(0.8)';
+      setTimeout(() => {
+        if (bottomBtn.style.opacity === '0') {
+          bottomBtn.style.display = 'none';
+        }
+      }, 200);
+    }
   }
 }
 

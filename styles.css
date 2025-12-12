@@ -1776,10 +1776,12 @@ body {
     font-size: 1.2rem;
     cursor: pointer;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
-    display: flex;
+    transition: all 0.3s ease, opacity 0.2s ease, transform 0.2s ease;
+    display: none;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
 }
 
 .sticky-btn:hover {

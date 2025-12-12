@@ -1826,6 +1826,135 @@ body {
     }
 }
 
+/* Advanced Dropdown Styles */
+.advanced-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    position: relative;
+}
+
+.dropdown-toggle::after {
+    content: '▼';
+    font-size: 0.7rem;
+    margin-left: 0.5rem;
+    opacity: 0.7;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 220px;
+    z-index: 1000;
+    display: none;
+    animation: dropdownSlideIn 0.2s ease-out;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+@keyframes dropdownSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-section {
+    padding: 0.5rem 0;
+}
+
+.dropdown-section:not(:last-child) {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-label {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 0.9rem;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+.dropdown-item:active {
+    background: #e0e0e0;
+}
+
+.dropdown-item.back-btn {
+    color: #2196F3;
+    font-weight: 500;
+}
+
+.dropdown-item.back-btn:hover {
+    background: #e3f2fd;
+}
+
+/* Copy Options Dropdown */
+.copy-options-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1001;
+}
+
+.copy-menu {
+    right: 0;
+    min-width: 250px;
+}
+
+/* Mobile Dropdown Styles */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        right: -50px;
+        min-width: 200px;
+    }
+    
+    .copy-menu {
+        right: -50px;
+        min-width: 220px;
+    }
+    
+    .dropdown-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .dropdown-label {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+}
+
 .setting-actions {
     display: flex;
     gap: 0.5rem;

@@ -67,9 +67,48 @@
           <button id="editBtn" class="btn btn-secondary" style="display: none;">✏️ Edit</button>
           <button id="progressBtn" class="btn btn-secondary">📊 Progress (0%)</button>
           <button id="progressEditBtn" class="btn btn-secondary" style="display: none;">✏️ Edit</button>
-          <button id="notesBtn" class="btn btn-secondary">📝 Notes</button>
           <button id="jumpToParagraphBtn" class="btn btn-secondary">🔍 Jump to ¶</button>
-          <button id="aiSettingsBtn" class="btn btn-secondary">🤖 AI Settings</button>
+          
+          <!-- Advanced Tools Dropdown -->
+          <div class="advanced-dropdown">
+            <button id="advancedBtn" class="btn btn-secondary dropdown-toggle">⚙️ Advanced</button>
+            <div id="advancedMenu" class="dropdown-menu">
+              <div class="dropdown-section">
+                <div class="dropdown-label">Story Tools</div>
+                <button class="dropdown-item" onclick="app.showNotesModal()">📝 Notes</button>
+                <button class="dropdown-item" onclick="app.showAiSettingsModal()">🤖 AI Settings</button>
+              </div>
+              
+              <div class="dropdown-section">
+                <div class="dropdown-label">Copy Options</div>
+                <button class="dropdown-item" onclick="app.showCopyOptionsMenu()">📋 Copy Paragraphs...</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Copy Options Submenu -->
+          <div class="copy-options-dropdown" style="display: none;">
+            <div id="copyOptionsMenu" class="dropdown-menu copy-menu">
+              <div class="dropdown-section">
+                <div class="dropdown-label">Copy Range</div>
+                <button class="dropdown-item" onclick="app.copyAllParagraphs()">📄 All Paragraphs</button>
+                <button class="dropdown-item" onclick="app.copyTopParagraphs(5)">⬆️ Top 5 Paragraphs</button>
+                <button class="dropdown-item" onclick="app.copyBottomParagraphs(5)">⬇️ Bottom 5 Paragraphs</button>
+                <button class="dropdown-item" onclick="app.copyCustomRange()">🎯 Custom Range...</button>
+              </div>
+              
+              <div class="dropdown-section">
+                <div class="dropdown-label">Copy Format</div>
+                <button class="dropdown-item" onclick="app.copyHeadingsOnly()">📝 Headings Only</button>
+                <button class="dropdown-item" onclick="app.copyWithContent()">📖 Headings + Content</button>
+              </div>
+              
+              <div class="dropdown-section">
+                <button class="dropdown-item back-btn" onclick="app.hideCopyOptionsMenu()">← Back to Advanced</button>
+              </div>
+            </div>
+          </div>
+          
           <button id="saveStoryBtn" class="btn btn-primary">Save</button>
           <button id="deleteStoryBtn" class="btn btn-danger">Delete</button>
         </div>

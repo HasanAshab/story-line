@@ -21,7 +21,8 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Auto-Save**: Optional automatic saving as you type (1-second delay)
 - **Manual Save**: Explicit save control for your work
 - **Delete Stories**: Remove unwanted stories with confirmation
-- **Copy to Clipboard**: Export stories as formatted text
+- **Advanced Copy Options**: Multiple copy formats and ranges (all, top/bottom N, custom range, headings only)
+- **Flexible Export**: Copy paragraphs with or without content, numbered and formatted
 
 ### Paragraph Organization
 - **Add Paragraphs**: Create new story sections with headings and content
@@ -130,6 +131,8 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Quick Navigation**: Jump to any paragraph instantly with visual highlighting and smooth scrolling
 - **Smart Controls**: Contextual floating buttons that show/hide based on scroll position and user needs
 - **Fast Prompts**: Simple prompt dialogs instead of complex modals for speed
+- **Clean Interface**: Advanced tools organized in dropdown menu to reduce visual clutter
+- **Advanced Toolbox**: Comprehensive dropdown menu with organized sections for secondary features
 
 ## 🔧 Technical Features
 

@@ -43,9 +43,13 @@ class StorylineApp {
     document.getElementById('copyStoryBtn').addEventListener('click', () => this.copyStoryToClipboard());
     document.getElementById('previewBtn').addEventListener('click', () => this.showPreview());
     document.getElementById('editBtn').addEventListener('click', () => this.showEdit());
-    document.getElementById('notesBtn').addEventListener('click', () => this.showNotesModal());
     document.getElementById('jumpToParagraphBtn').addEventListener('click', () => this.showJumpToParagraphModal());
-    document.getElementById('aiSettingsBtn').addEventListener('click', () => this.showAiSettingsModal());
+    
+    // Advanced dropdown functionality
+    document.getElementById('advancedBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleAdvancedMenu();
+    });
 
     // Paragraph actions
     document.getElementById('addParagraphBtn').addEventListener('click', () => this.addParagraph());
@@ -2979,6 +2983,13 @@ class StorylineApp {
         this.jumpToBottom();
       }
     });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.advanced-dropdown') && !e.target.closest('.copy-options-dropdown')) {
+        this.hideAllDropdowns();
+      }
+    });
   }
 
   setupSmartStickyNavigation() {
@@ -3062,6 +3073,169 @@ class StorylineApp {
         }
       }, 200);
     }
+  }
+
+  // Advanced Dropdown functionality
+  toggleAdvancedMenu() {
+    const menu = document.getElementById('advancedMenu');
+    const isVisible = menu.classList.contains('show');
+    
+    this.hideAllDropdowns();
+    
+    if (!isVisible) {
+      menu.classList.add('show');
+    }
+  }
+
+  hideAllDropdowns() {
+    document.getElementById('advancedMenu').classList.remove('show');
+    const copyDropdown = document.querySelector('.copy-options-dropdown');
+    if (copyDropdown) {
+      copyDropdown.style.display = 'none';
+    }
+  }
+
+  showCopyOptionsMenu() {
+    // Hide advanced menu and show copy options
+    document.getElementById('advancedMenu').classList.remove('show');
+    const copyDropdown = document.querySelector('.copy-options-dropdown');
+    copyDropdown.style.display = 'block';
+    document.getElementById('copyOptionsMenu').classList.add('show');
+  }
+
+  hideCopyOptionsMenu() {
+    // Hide copy options and show advanced menu
+    document.getElementById('copyOptionsMenu').classList.remove('show');
+    document.querySelector('.copy-options-dropdown').style.display = 'none';
+    document.getElementById('advancedMenu').classList.add('show');
+  }
+
+  // Copy functionality
+  copyAllParagraphs() {
+    this.copyParagraphsRange(0, -1, true);
+    this.hideAllDropdowns();
+  }
+
+  copyTopParagraphs(count) {
+    this.copyParagraphsRange(0, count - 1, true);
+    this.hideAllDropdowns();
+  }
+
+  copyBottomParagraphs(count) {
+    const story = this.stories[this.currentStoryId];
+    const startIndex = Math.max(0, story.paragraphs.length - count);
+    this.copyParagraphsRange(startIndex, -1, true);
+    this.hideAllDropdowns();
+  }
+
+  copyCustomRange() {
+    const story = this.stories[this.currentStoryId];
+    const totalParagraphs = story.paragraphs.length;
+    
+    const input = prompt(`Enter range (e.g., "1-5" or "3-10"). Total paragraphs: ${totalParagraphs}`);
+    
+    if (!input) {
+      this.hideAllDropdowns();
+      return;
+    }
+    
+    const range = input.trim().split('-');
+    if (range.length !== 2) {
+      alert('Please enter a valid range like "1-5"');
+      return;
+    }
+    
+    const start = parseInt(range[0]) - 1; // Convert to 0-based index
+    const end = parseInt(range[1]) - 1;   // Convert to 0-based index
+    
+    if (isNaN(start) || isNaN(end) || start < 0 || end >= totalParagraphs || start > end) {
+      alert(`Please enter a valid range between 1 and ${totalParagraphs}`);
+      return;
+    }
+    
+    this.copyParagraphsRange(start, end, true);
+    this.hideAllDropdowns();
+  }
+
+  copyHeadingsOnly() {
+    this.copyParagraphsRange(0, -1, false);
+    this.hideAllDropdowns();
+  }
+
+  copyWithContent() {
+    this.copyParagraphsRange(0, -1, true);
+    this.hideAllDropdowns();
+  }
+
+  copyParagraphsRange(startIndex, endIndex, includeContent) {
+    const story = this.stories[this.currentStoryId];
+    if (!story || !story.paragraphs || story.paragraphs.length === 0) {
+      alert('No paragraphs to copy');
+      return;
+    }
+    
+    // Handle negative endIndex (means to end)
+    const actualEndIndex = endIndex === -1 ? story.paragraphs.length - 1 : endIndex;
+    
+    // Get the paragraphs in the specified range
+    const paragraphsToShow = story.paragraphs.slice(startIndex, actualEndIndex + 1);
+    
+    let text = '';
+    
+    // Add story title if copying from beginning
+    if (startIndex === 0 && story.title) {
+      text += `${story.title}\n${'='.repeat(story.title.length)}\n\n`;
+    }
+    
+    paragraphsToShow.forEach((paragraph, index) => {
+      const actualIndex = startIndex + index + 1;
+      
+      // Add heading
+      if (paragraph.heading && paragraph.heading.trim()) {
+        text += `${actualIndex}. ${paragraph.heading}\n`;
+        if (includeContent) {
+          text += `${'-'.repeat(paragraph.heading.length + 3)}\n`;
+        }
+      } else if (paragraph.content && includeContent) {
+        // Auto-generate heading from content
+        const words = paragraph.content.trim().split(' ').slice(0, 3);
+        const autoHeading = words.join(' ') + (paragraph.content.trim().split(' ').length > 3 ? '...' : '');
+        text += `${actualIndex}. ${autoHeading}\n`;
+        text += `${'-'.repeat(autoHeading.length + 3)}\n`;
+      } else {
+        text += `${actualIndex}. Paragraph ${actualIndex}\n`;
+        if (includeContent) {
+          text += `${'-'.repeat(15)}\n`;
+        }
+      }
+      
+      // Add content if requested
+      if (includeContent && paragraph.content && paragraph.content.trim()) {
+        text += `${paragraph.content}\n`;
+      }
+      
+      text += '\n';
+    });
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+      const rangeText = startIndex === 0 && actualEndIndex === story.paragraphs.length - 1 
+        ? 'All paragraphs' 
+        : `Paragraphs ${startIndex + 1}-${actualEndIndex + 1}`;
+      const formatText = includeContent ? 'with content' : 'headings only';
+      
+      alert(`✓ Copied! ${rangeText} (${formatText}) copied to clipboard.`);
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      alert('✓ Copied to clipboard!');
+    });
   }
 }
 

@@ -44,6 +44,7 @@ class StorylineApp {
     document.getElementById('previewBtn').addEventListener('click', () => this.showPreview());
     document.getElementById('editBtn').addEventListener('click', () => this.showEdit());
     document.getElementById('notesBtn').addEventListener('click', () => this.showNotesModal());
+    document.getElementById('jumpToParagraphBtn').addEventListener('click', () => this.showJumpToParagraphModal());
     document.getElementById('aiSettingsBtn').addEventListener('click', () => this.showAiSettingsModal());
 
     // Paragraph actions
@@ -130,8 +131,15 @@ class StorylineApp {
       }
     });
 
+    // Sticky navigation functionality
+    document.getElementById('jumpToTopBtn').addEventListener('click', () => this.jumpToTop());
+    document.getElementById('jumpToBottomBtn').addEventListener('click', () => this.jumpToBottom());
+
     // Prevent accidental navigation away from the app
     this.setupNavigationWarning();
+    
+    // Setup keyboard shortcuts
+    this.setupKeyboardShortcuts();
   }
 
   setupNavigationWarning() {
@@ -357,6 +365,7 @@ class StorylineApp {
     this.currentStoryId = null; // Clear current story when going back to list
     this.showView('storyListView');
     this.renderStoryList();
+    this.hideStickyNavigation();
     
     // Update browser history
     history.pushState({ view: 'list' }, '', '#');
@@ -366,6 +375,7 @@ class StorylineApp {
     this.currentStoryId = storyId;
     this.showView('storyEditorView');
     this.renderStoryEditor();
+    this.showStickyNavigation();
     
     // Update browser history to handle back button properly
     if (storyId) {
@@ -470,10 +480,7 @@ class StorylineApp {
     if (this.showLimitedParagraphs && startIndex > 0) {
       hiddenIndicator = `
         <div class="hidden-paragraphs-indicator">
-          <p>📝 ${startIndex} earlier paragraph${startIndex !== 1 ? 's' : ''} hidden for better performance</p>
-          <button class="btn btn-small show-all-btn" onclick="app.toggleParagraphsView()">
-            📋 Show All ${story.paragraphs.length} Paragraphs
-          </button>
+          <p>📝 ${startIndex} earlier paragraph${startIndex !== 1 ? 's' : ''} hidden</p>
         </div>
       `;
     }
@@ -2794,6 +2801,167 @@ class StorylineApp {
     }
     
     return data.choices[0].message.content.trim();
+  }
+
+  // Jump to Paragraph functionality
+  showJumpToParagraphModal() {
+    const story = this.stories[this.currentStoryId];
+    if (!story || !story.paragraphs || story.paragraphs.length === 0) {
+      alert('No paragraphs to jump to. Add some paragraphs first.');
+      return;
+    }
+
+    const totalParagraphs = story.paragraphs.length;
+    const input = prompt(`Jump to paragraph (1-${totalParagraphs}):`);
+    
+    if (input === null) {
+      // User cancelled
+      return;
+    }
+    
+    const paragraphNum = parseInt(input);
+    
+    if (!paragraphNum || isNaN(paragraphNum) || paragraphNum < 1 || paragraphNum > totalParagraphs) {
+      alert(`Please enter a valid paragraph number between 1 and ${totalParagraphs}`);
+      return;
+    }
+    
+    this.jumpToParagraphByNumber(paragraphNum);
+  }
+
+  jumpToParagraphByNumber(paragraphNum) {
+    const story = this.stories[this.currentStoryId];
+    
+    // If we're in limited view and the target paragraph is not visible, switch to full view
+    if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
+      const startIndex = story.paragraphs.length - 5;
+      const targetIndex = paragraphNum - 1;
+      
+      if (targetIndex < startIndex) {
+        // Target paragraph is hidden, switch to full view
+        this.showLimitedParagraphs = false;
+        this.renderParagraphs();
+      }
+    }
+    
+    // Wait for rendering to complete, then scroll to paragraph
+    setTimeout(() => {
+      this.scrollToParagraph(paragraphNum - 1);
+    }, 100);
+  }
+
+  scrollToParagraph(paragraphIndex) {
+    // Find the paragraph element
+    const paragraphItems = document.querySelectorAll('.paragraph-item');
+    let targetElement = null;
+    
+    // Find the correct paragraph by data-index
+    paragraphItems.forEach(item => {
+      const dataIndex = parseInt(item.getAttribute('data-index'));
+      if (dataIndex === paragraphIndex) {
+        targetElement = item;
+      }
+    });
+    
+    if (!targetElement) {
+      alert('Paragraph not found. It might be hidden in limited view.');
+      return;
+    }
+    
+    // Add highlight class
+    targetElement.classList.add('jump-highlight');
+    
+    // Scroll to the paragraph with smooth behavior
+    targetElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+    
+    // Remove highlight after animation
+    setTimeout(() => {
+      targetElement.classList.remove('jump-highlight');
+    }, 2000);
+    
+    // If paragraph is collapsed, expand it
+    const story = this.stories[this.currentStoryId];
+    if (story.paragraphs[paragraphIndex].collapsed) {
+      this.toggleParagraph(paragraphIndex, false); // Don't save, just expand
+    }
+  }
+
+  // Sticky Navigation functionality
+  jumpToTop() {
+    const story = this.stories[this.currentStoryId];
+    if (!story || !story.paragraphs || story.paragraphs.length === 0) {
+      return;
+    }
+    
+    // If in limited view, switch to full view to show first paragraph
+    if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
+      this.showLimitedParagraphs = false;
+      this.renderParagraphs();
+      
+      // Wait for rendering, then scroll to top
+      setTimeout(() => {
+        this.scrollToParagraph(0);
+      }, 100);
+    } else {
+      this.scrollToParagraph(0);
+    }
+  }
+
+  jumpToBottom() {
+    const story = this.stories[this.currentStoryId];
+    if (!story || !story.paragraphs || story.paragraphs.length === 0) {
+      return;
+    }
+    
+    const lastIndex = story.paragraphs.length - 1;
+    this.scrollToParagraph(lastIndex);
+  }
+
+  showStickyNavigation() {
+    const stickyNav = document.getElementById('stickyNavigation');
+    if (stickyNav) {
+      stickyNav.style.display = 'flex';
+    }
+  }
+
+  hideStickyNavigation() {
+    const stickyNav = document.getElementById('stickyNavigation');
+    if (stickyNav) {
+      stickyNav.style.display = 'none';
+    }
+  }
+
+  setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Only handle shortcuts when in story editor and not typing in inputs
+      if (!this.currentStoryId || 
+          e.target.tagName === 'INPUT' || 
+          e.target.tagName === 'TEXTAREA' ||
+          e.target.isContentEditable) {
+        return;
+      }
+      
+      // Ctrl+G or Cmd+G to jump to paragraph
+      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+        e.preventDefault();
+        this.showJumpToParagraphModal();
+      }
+      
+      // Home key to jump to top
+      if (e.key === 'Home' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        this.jumpToTop();
+      }
+      
+      // End key to jump to bottom
+      if (e.key === 'End' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        this.jumpToBottom();
+      }
+    });
   }
 }
 

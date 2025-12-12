@@ -32,6 +32,9 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Quick Move Controls**: Up/down arrow buttons to move paragraphs to top or bottom of story
 - **Limited View Mode**: Show only the last 5 paragraphs by default for better performance on low-end mobile devices
 - **Show All Toggle**: Button to reveal all paragraphs when needed, with clear indication of hidden content
+- **Jump to Paragraph**: Quickly navigate to any paragraph by number using simple prompt dialog
+- **Sticky Navigation**: Floating buttons for instant jump to top/bottom of story
+- **Keyboard Shortcuts**: Ctrl+G (Cmd+G) to jump to paragraph, Home/End keys for top/bottom navigation
 
 ### Search & Discovery
 - **Story Search**: Find stories by title or content across your entire collection
@@ -124,6 +127,9 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Error Handling**: Graceful error handling with user feedback
 - **Navigation Protection**: Warns users before leaving the app to prevent accidental data loss
 - **Browser Back Button**: Smart handling of browser navigation with confirmation dialogs
+- **Quick Navigation**: Jump to any paragraph instantly with visual highlighting and smooth scrolling
+- **Sticky Controls**: Always-visible floating buttons for top/bottom navigation
+- **Fast Prompts**: Simple prompt dialogs instead of complex modals for speed
 
 ## 🔧 Technical Features
 

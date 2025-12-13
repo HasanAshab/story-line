@@ -856,7 +856,7 @@ class StorylineApp {
     this.hideSyncDropdowns();
     
     // Password verification first
-    if (!this.verifyUploadPassword()) {
+    if (!this.verifyUploadPassword(mode)) {
       return;
     }
 
@@ -1168,7 +1168,7 @@ class StorylineApp {
     this.uploadPassword = atob(atob("vZkMiRnRyIWdFpWT".split('').reverse().join(''))).split('').reverse().join('');
   }
 
-  verifyUploadPassword() {
+  verifyUploadPassword(mode) {
     if (!this.uploadPassword || this.uploadPassword === 'your_secure_password_here') {
       alert('Upload password not configured. Please set UPLOAD_PASSWORD in .env file.');
       return false;
@@ -1182,6 +1182,14 @@ class StorylineApp {
     if (enteredPassword !== this.uploadPassword) {
       alert('Incorrect password. Upload cancelled.');
       return false;
+    }
+
+    if (mode === 'replace') {
+      const confirm = prompt('Type "REPLACE" (in capital letters) to confirm:');
+      if (confirm !== 'REPLACE') {
+        alert('Upload cancelled. You must type "REPLACE" exactly to confirm.');
+        return false;
+      }
     }
 
     return true;

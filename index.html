@@ -244,12 +244,38 @@
         <button id="closeVersionsBtn" class="modal-close">×</button>
       </div>
       <div class="modal-body">
-        <div class="versions-info">
-          <p>Your last 5 backup versions are stored automatically when you upload to cloud. You can preview or restore
-            any version.</p>
+        <!-- Version Tabs -->
+        <div class="version-tabs">
+          <button id="autoVersionsTab" class="version-tab active" onclick="app.showVersionTab('auto')">
+            🔄 Auto Backups
+          </button>
+          <button id="manualVersionsTab" class="version-tab" onclick="app.showVersionTab('manual')">
+            📝 Manual Backups
+          </button>
         </div>
-        <div id="versionsList" class="versions-list">
-          <!-- Versions will be rendered here -->
+
+        <!-- Auto Versions Content -->
+        <div id="autoVersionsContent" class="version-tab-content active">
+          <div class="versions-info">
+            <p>Your last 5 backup versions are stored automatically when you upload to cloud. You can preview or restore any version.</p>
+          </div>
+          <div id="versionsList" class="versions-list">
+            <!-- Auto versions will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Manual Versions Content -->
+        <div id="manualVersionsContent" class="version-tab-content">
+          <div class="versions-info">
+            <p>Create and manage your own named backups. Manual backups are unlimited and stored locally.</p>
+            <div class="manual-backup-controls">
+              <input type="text" id="manualBackupName" placeholder="Backup name (optional)" class="backup-name-input">
+              <button id="createManualBackupBtn" class="btn btn-primary">💾 Create Backup</button>
+            </div>
+          </div>
+          <div id="manualVersionsList" class="versions-list">
+            <!-- Manual versions will be rendered here -->
+          </div>
         </div>
       </div>
     </div>

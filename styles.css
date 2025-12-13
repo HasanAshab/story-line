@@ -1313,6 +1313,67 @@ body {
     width: 95%;
 }
 
+/* Version Tabs */
+.version-tabs {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 1.5rem;
+}
+
+.version-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.version-tab:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.version-tab.active {
+    color: #2196F3;
+    border-bottom-color: #2196F3;
+    background: #f8f9fa;
+}
+
+.version-tab-content {
+    display: none;
+}
+
+.version-tab-content.active {
+    display: block;
+}
+
+/* Manual Backup Controls */
+.manual-backup-controls {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    align-items: center;
+}
+
+.backup-name-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.backup-name-input:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
 .versions-info {
     background: #e3f2fd;
     border: 1px solid #2196F3;
@@ -1508,6 +1569,20 @@ body {
     .versions-info {
         padding: 0.75rem;
         font-size: 0.85rem;
+    }
+    
+    .version-tab {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .manual-backup-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .backup-name-input {
+        width: 100%;
     }
     
     .version-item {

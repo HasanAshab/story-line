@@ -114,6 +114,7 @@ class StorylineApp {
         this.closeVersionsModal();
       }
     });
+    document.getElementById('createManualBackupBtn').addEventListener('click', () => this.createManualBackup());
 
     // AI Settings modal functionality
     document.getElementById('closeAiSettingsBtn').addEventListener('click', () => this.closeAiSettingsModal());
@@ -2085,22 +2086,34 @@ class StorylineApp {
       btn.textContent = '📋 Loading...';
       btn.disabled = true;
 
-      // Wait for Firebase to be available
-      if (!window.db) {
-        throw new Error('Firebase not initialized');
+      // Load manual backups first (always available)
+      this.renderManualVersionsList();
+
+      // Try to load auto versions from Firebase
+      try {
+        if (!window.db) {
+          throw new Error('Firebase not initialized');
+        }
+
+        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+        const userDocRef = doc(window.db, 'storylines', 'user_data');
+        const docSnap = await getDoc(userDocRef);
+
+        let versions = [];
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          versions = data.versions || [];
+        }
+
+        this.renderVersionsList(versions);
+      } catch (firebaseError) {
+        console.warn('Firebase not available for auto versions:', firebaseError);
+        // Show message in auto versions tab
+        document.getElementById('versionsList').innerHTML = '<div class="versions-empty">Cloud sync not available. Auto backups require cloud sync to be configured.</div>';
       }
 
-      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
-      const userDocRef = doc(window.db, 'storylines', 'user_data');
-      const docSnap = await getDoc(userDocRef);
-
-      let versions = [];
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        versions = data.versions || [];
-      }
-
-      this.renderVersionsList(versions);
+      // Show the modal with auto tab active by default
+      this.showVersionTab('auto');
       document.getElementById('versionsModal').style.display = 'flex';
 
       btn.textContent = originalText;
@@ -2116,6 +2129,237 @@ class StorylineApp {
         btn.style.background = '';
         btn.disabled = false;
       }, 2000);
+    }
+  }
+
+  showVersionTab(tabName) {
+    // Update tab buttons
+    document.getElementById('autoVersionsTab').classList.toggle('active', tabName === 'auto');
+    document.getElementById('manualVersionsTab').classList.toggle('active', tabName === 'manual');
+    
+    // Update tab content
+    document.getElementById('autoVersionsContent').classList.toggle('active', tabName === 'auto');
+    document.getElementById('manualVersionsContent').classList.toggle('active', tabName === 'manual');
+    
+    // Refresh manual versions list when switching to manual tab
+    if (tabName === 'manual') {
+      this.renderManualVersionsList();
+    }
+  }
+
+  createManualBackup() {
+    try {
+      const nameInput = document.getElementById('manualBackupName');
+      const backupName = nameInput.value.trim() || `Backup ${new Date().toLocaleString()}`;
+      
+      // Get current stories data
+      const backupData = {
+        name: backupName,
+        timestamp: Date.now(),
+        stories: JSON.parse(JSON.stringify(this.stories)), // Deep copy
+        createdAt: new Date().toISOString()
+      };
+
+      // Get existing manual backups
+      const manualBackups = this.getManualBackups();
+      
+      // Add new backup
+      manualBackups.push(backupData);
+      
+      // Save to localStorage
+      localStorage.setItem('storyline_manual_backups', JSON.stringify(manualBackups));
+      
+      // Clear input and refresh list
+      nameInput.value = '';
+      this.renderManualVersionsList();
+      
+      // Show success feedback
+      const btn = document.getElementById('createManualBackupBtn');
+      const originalText = btn.textContent;
+      btn.textContent = '✅ Created!';
+      btn.style.background = '#4CAF50';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+      }, 2000);
+
+    } catch (error) {
+      console.error('Failed to create manual backup:', error);
+      alert('Failed to create backup. Please try again.');
+    }
+  }
+
+  getManualBackups() {
+    const stored = localStorage.getItem('storyline_manual_backups');
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  renderManualVersionsList() {
+    const manualVersionsList = document.getElementById('manualVersionsList');
+    const manualBackups = this.getManualBackups();
+    
+    if (!manualBackups || manualBackups.length === 0) {
+      manualVersionsList.innerHTML = '<div class="versions-empty">No manual backups yet. Create your first backup above!</div>';
+      return;
+    }
+
+    // Sort by timestamp (newest first)
+    manualBackups.sort((a, b) => b.timestamp - a.timestamp);
+
+    manualVersionsList.innerHTML = manualBackups.map((backup, index) => {
+      const backupDate = new Date(backup.timestamp);
+      const storyCount = Object.keys(backup.stories || {}).length;
+      const totalParagraphs = Object.values(backup.stories || {}).reduce((total, story) => {
+        return total + (story.paragraphs ? story.paragraphs.length : 0);
+      }, 0);
+
+      return `
+        <div class="version-item">
+          <div class="version-header">
+            <div class="version-info">
+              <div class="version-date">${this.escapeHtml(backup.name)}</div>
+              <div class="version-stats">${backupDate.toLocaleString()} • ${storyCount} stories • ${totalParagraphs} paragraphs</div>
+            </div>
+            <div class="version-controls">
+              <button class="version-btn preview-btn" onclick="app.previewManualBackup(${index})" title="Preview this backup">👁️</button>
+              <button class="version-btn restore-btn" onclick="app.restoreManualBackup(${index})" title="Restore this backup">🔄</button>
+              <button class="version-btn delete-btn" onclick="app.deleteManualBackup(${index})" title="Delete this backup" style="color: #f44336;">🗑️</button>
+            </div>
+          </div>
+          <div class="version-description">Manual backup created locally</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async previewManualBackup(backupIndex) {
+    try {
+      const manualBackups = this.getManualBackups();
+      const backup = manualBackups[backupIndex];
+
+      if (!backup) {
+        throw new Error('Backup not found');
+      }
+
+      // Create preview content
+      const stories = backup.stories || {};
+      const storyIds = Object.keys(stories);
+      
+      let previewHTML = `<div class="version-preview-header">
+        <h3>Manual Backup Preview: ${this.escapeHtml(backup.name)}</h3>
+        <p>Created: ${new Date(backup.timestamp).toLocaleString()}</p>
+        <p>${storyIds.length} stories in this backup</p>
+      </div>`;
+
+      if (storyIds.length === 0) {
+        previewHTML += '<div class="preview-empty">No stories in this backup.</div>';
+      } else {
+        previewHTML += storyIds.map(storyId => {
+          const story = stories[storyId];
+          const paragraphCount = story.paragraphs ? story.paragraphs.length : 0;
+          const preview = this.getStoryPreview(story);
+
+          return `
+            <div class="preview-story-card">
+              <h4>${this.escapeHtml(story.title || 'Untitled Story')}</h4>
+              <div class="preview-story-meta">
+                ${paragraphCount} paragraph${paragraphCount !== 1 ? 's' : ''} • 
+                ${new Date(story.updatedAt || story.createdAt).toLocaleDateString()}
+              </div>
+              <div class="preview-story-content">${preview}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Show preview in manual versions list
+      const manualVersionsList = document.getElementById('manualVersionsList');
+      const originalContent = manualVersionsList.innerHTML;
+      
+      manualVersionsList.innerHTML = `
+        <div class="version-preview">
+          ${previewHTML}
+          <div class="preview-controls">
+            <button class="version-btn" onclick="app.closeManualBackupPreview('${originalContent.replace(/'/g, "\\'")}')">← Back to Manual Backups</button>
+          </div>
+        </div>
+      `;
+
+    } catch (error) {
+      console.error('Failed to preview manual backup:', error);
+      alert('Failed to preview backup. Please try again.');
+    }
+  }
+
+  closeManualBackupPreview(originalContent) {
+    const manualVersionsList = document.getElementById('manualVersionsList');
+    manualVersionsList.innerHTML = originalContent.replace(/\\'/g, "'");
+  }
+
+  async restoreManualBackup(backupIndex) {
+    const manualBackups = this.getManualBackups();
+    const backup = manualBackups[backupIndex];
+
+    if (!backup) {
+      alert('Backup not found.');
+      return;
+    }
+
+    // Multiple confirmations for safety
+    const confirmRestore = confirm(`⚠️ WARNING: This will replace ALL your current local stories with the backup "${backup.name}".\n\nThis action cannot be undone. Are you sure you want to continue?`);
+    if (!confirmRestore) {
+      return;
+    }
+
+    const doubleConfirm = confirm('🚨 FINAL WARNING: You are about to permanently replace your current stories.\n\nClick OK to confirm this action.');
+    if (!doubleConfirm) {
+      return;
+    }
+
+    try {
+      // Restore the backup
+      this.stories = JSON.parse(JSON.stringify(backup.stories)) || {};
+      this.saveStories();
+      
+      // Close modal and refresh view
+      this.closeVersionsModal();
+      this.showStoryList();
+
+      alert(`✅ Successfully restored ${Object.keys(this.stories).length} stories from backup "${backup.name}"`);
+
+    } catch (error) {
+      console.error('Failed to restore manual backup:', error);
+      alert('Failed to restore backup. Please try again.');
+    }
+  }
+
+  deleteManualBackup(backupIndex) {
+    const manualBackups = this.getManualBackups();
+    const backup = manualBackups[backupIndex];
+
+    if (!backup) {
+      alert('Backup not found.');
+      return;
+    }
+
+    const confirmDelete = confirm(`Delete backup "${backup.name}"?\n\nThis action cannot be undone.`);
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      // Remove backup from array
+      manualBackups.splice(backupIndex, 1);
+      
+      // Save updated list
+      localStorage.setItem('storyline_manual_backups', JSON.stringify(manualBackups));
+      
+      // Refresh the list
+      this.renderManualVersionsList();
+
+    } catch (error) {
+      console.error('Failed to delete manual backup:', error);
+      alert('Failed to delete backup. Please try again.');
     }
   }
 

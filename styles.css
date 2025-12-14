@@ -963,6 +963,10 @@ body {
     font-weight: 500;
 }
 
+.dropdown-item.add-paragraph-item {
+    color: #007bff;
+}
+
 .dropdown-item.ai-complete-item {
     color: #28a745;
 }

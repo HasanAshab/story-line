@@ -526,6 +526,10 @@ class StorylineApp {
                                     <button class="dropdown-item" onclick="app.moveParagraph(${index}, 1); app.closeParagraphDropdown(${index})" ${index === story.paragraphs.length - 1 ? 'disabled' : ''}>
                                         ⬇️ Move to Bottom
                                     </button>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item add-paragraph-item" onclick="app.addParagraphAfter(${index}); app.closeParagraphDropdown(${index})">
+                                        ➕ Add Paragraph
+                                    </button>
                                     <button class="dropdown-item ai-complete-item" onclick="app.completeParagraphWithAI(${index}); app.closeParagraphDropdown(${index})">
                                         🤖 Complete with AI
                                     </button>
@@ -587,6 +591,43 @@ class StorylineApp {
         const lastContentArea = contentAreas[contentAreas.length - 1];
         lastContentArea.focus();
       }
+    }, 100);
+  }
+
+  addParagraphAfter(index) {
+    const story = this.stories[this.currentStoryId];
+    if (!story.paragraphs) story.paragraphs = [];
+
+    // Insert new paragraph after the specified index
+    const newParagraph = {
+      heading: '',
+      content: '',
+      collapsed: false,
+      progress: {} // Initialize progress tracking for new paragraphs
+    };
+
+    story.paragraphs.splice(index + 1, 0, newParagraph);
+
+    story.updatedAt = new Date().toISOString();
+    this.triggerAutoSave();
+    this.renderParagraphs();
+    
+    // Auto-focus the new paragraph's content area
+    setTimeout(() => {
+      // Find the newly created paragraph (it will be at index + 1)
+      const paragraphItems = document.querySelectorAll('.paragraph-item');
+      const targetParagraphIndex = index + 1;
+      
+      // Account for limited view mode - we need to find the actual DOM element
+      paragraphItems.forEach((item) => {
+        const itemIndex = parseInt(item.getAttribute('data-index'));
+        if (itemIndex === targetParagraphIndex) {
+          const contentArea = item.querySelector('.paragraph-content');
+          if (contentArea) {
+            contentArea.focus();
+          }
+        }
+      });
     }, 100);
   }
 

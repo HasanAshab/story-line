@@ -26,12 +26,14 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 
 ### Paragraph Organization
 - **Add Paragraphs**: Create new story sections with headings and content
+- **Insert Paragraphs**: Add new paragraphs anywhere in your story using dropdown menu
+- **Contextual Addition**: Insert paragraphs right after the current one for better workflow
 - **Drag & Drop Reordering**: Rearrange paragraphs via desktop drag-and-drop
 - **Mobile Touch Reordering**: Touch-friendly paragraph reordering on mobile devices
 - **Collapse/Expand**: Hide or show paragraph content for better organization
 - **Bulk Operations**: Expand all or collapse all paragraphs at once
 - **Clean Interface**: Minimal 3-dot dropdown menu for paragraph actions to reduce visual clutter
-- **Dropdown Actions**: Move to top/bottom, AI completion, notes, and delete all in organized menu
+- **Dropdown Actions**: Add paragraph, move to top/bottom, AI completion, notes, and delete all in organized menu
 - **Focus on Writing**: Cleaner paragraph interface with fewer visible buttons for better writing focus
 - **Limited View Mode**: Show only the last 5 paragraphs by default for better performance on low-end mobile devices
 - **Show All Toggle**: Button to reveal all paragraphs when needed, with clear indication of hidden content

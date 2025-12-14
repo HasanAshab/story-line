@@ -1742,10 +1742,17 @@ class StorylineApp {
 
       story.paragraphs.forEach((paragraph, index) => {
         if (paragraph.content && paragraph.content.trim()) {
-          previewHTML += '<div class="preview-paragraph">';
+          previewHTML += `<div class="preview-paragraph" id="previewParagraph${index + 1}">`;
 
           if (paragraph.heading && paragraph.heading.trim()) {
-            previewHTML += `<div class="preview-paragraph-heading">${this.escapeHtml(paragraph.heading)}</div>`;
+            previewHTML += `<div class="preview-paragraph-heading">
+              <span class="preview-paragraph-number">${index + 1}.</span> ${this.escapeHtml(paragraph.heading)}
+            </div>`;
+          } else {
+            // Show paragraph number even without heading
+            previewHTML += `<div class="preview-paragraph-heading">
+              <span class="preview-paragraph-number">${index + 1}.</span> ${this.getAutoHeading(paragraph.content)}
+            </div>`;
           }
 
           previewHTML += `<div class="preview-paragraph-content">${this.escapeHtml(paragraph.content).replace(/\n/g, '<br>')}</div>`;
@@ -3667,22 +3674,54 @@ class StorylineApp {
   jumpToParagraphByNumber(paragraphNum) {
     const story = this.stories[this.currentStoryId];
     
-    // If we're in limited view and the target paragraph is not visible, switch to full view
-    if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
-      const startIndex = story.paragraphs.length - 5;
-      const targetIndex = paragraphNum - 1;
-      
-      if (targetIndex < startIndex) {
-        // Target paragraph is hidden, switch to full view
-        this.showLimitedParagraphs = false;
-        this.renderParagraphs();
+    // Check if we're in preview mode
+    const previewMode = document.getElementById('previewMode');
+    const isPreviewMode = previewMode && previewMode.style.display === 'block';
+    
+    if (isPreviewMode) {
+      // In preview mode, jump directly to the preview paragraph
+      this.scrollToPreviewParagraph(paragraphNum);
+    } else {
+      // In edit mode, handle limited view and then scroll
+      if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
+        const startIndex = story.paragraphs.length - 5;
+        const targetIndex = paragraphNum - 1;
+        
+        if (targetIndex < startIndex) {
+          // Target paragraph is hidden, switch to full view
+          this.showLimitedParagraphs = false;
+          this.renderParagraphs();
+        }
       }
+      
+      // Wait for rendering to complete, then scroll to paragraph
+      setTimeout(() => {
+        this.scrollToParagraph(paragraphNum - 1);
+      }, 100);
+    }
+  }
+
+  scrollToPreviewParagraph(paragraphNum) {
+    const targetElement = document.getElementById(`previewParagraph${paragraphNum}`);
+    
+    if (!targetElement) {
+      alert(`Paragraph ${paragraphNum} not found in preview.`);
+      return;
     }
     
-    // Wait for rendering to complete, then scroll to paragraph
+    // Add highlight class
+    targetElement.classList.add('jump-highlight');
+    
+    // Scroll to the paragraph with smooth behavior
+    targetElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+    
+    // Remove highlight after 3 seconds
     setTimeout(() => {
-      this.scrollToParagraph(paragraphNum - 1);
-    }, 100);
+      targetElement.classList.remove('jump-highlight');
+    }, 3000);
   }
 
   scrollToParagraph(paragraphIndex) {
@@ -3736,17 +3775,26 @@ class StorylineApp {
       return;
     }
     
-    // If in limited view, switch to full view to show first paragraph
-    if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
-      this.showLimitedParagraphs = false;
-      this.renderParagraphs();
-      
-      // Wait for rendering, then scroll to top
-      setTimeout(() => {
-        this.scrollToParagraph(0);
-      }, 100);
+    // Check if we're in preview mode
+    const previewMode = document.getElementById('previewMode');
+    const isPreviewMode = previewMode && previewMode.style.display === 'block';
+    
+    if (isPreviewMode) {
+      // In preview mode, scroll to the first preview paragraph
+      this.scrollToPreviewParagraph(1);
     } else {
-      this.scrollToParagraph(0);
+      // In edit mode, handle limited view and then scroll
+      if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
+        this.showLimitedParagraphs = false;
+        this.renderParagraphs();
+        
+        // Wait for rendering, then scroll to top
+        setTimeout(() => {
+          this.scrollToParagraph(0);
+        }, 100);
+      } else {
+        this.scrollToParagraph(0);
+      }
     }
   }
 
@@ -3756,8 +3804,19 @@ class StorylineApp {
       return;
     }
     
-    const lastIndex = story.paragraphs.length - 1;
-    this.scrollToParagraph(lastIndex);
+    // Check if we're in preview mode
+    const previewMode = document.getElementById('previewMode');
+    const isPreviewMode = previewMode && previewMode.style.display === 'block';
+    
+    if (isPreviewMode) {
+      // In preview mode, scroll to the last preview paragraph
+      const lastParagraphNum = story.paragraphs.filter(p => p.content && p.content.trim()).length;
+      this.scrollToPreviewParagraph(lastParagraphNum);
+    } else {
+      // In edit mode, scroll to last paragraph
+      const lastIndex = story.paragraphs.length - 1;
+      this.scrollToParagraph(lastIndex);
+    }
   }
 
   showStickyNavigation() {

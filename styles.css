@@ -1298,6 +1298,12 @@ body {
     color: #444;
 }
 
+.preview-paragraph-number {
+    color: #2196F3;
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+
 .preview-paragraph-content {
     font-size: 1rem;
     line-height: 1.8;
@@ -1330,6 +1336,10 @@ body {
     .preview-paragraph-content {
         font-size: 0.95rem;
         text-indent: 1rem;
+    }
+    
+    .preview-paragraph-number {
+        font-size: 1rem;
     }
 }
 
@@ -2172,6 +2182,16 @@ body {
     50% {
         transform: scale(1.02);
     }
+}
+
+/* Preview paragraph highlighting for jump */
+.preview-paragraph.jump-highlight {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding-left: 1rem;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+    animation: jumpPulse 2s ease-in-out;
+    transition: all 0.3s ease;
 }
 
 /* Mobile Sticky Navigation */

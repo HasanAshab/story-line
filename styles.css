@@ -253,6 +253,20 @@ body {
     cursor: not-allowed;
 }
 
+.btn-merge {
+    background: #28a745;
+    color: white;
+}
+
+.btn-merge:hover:not(:disabled) {
+    background: #218838;
+}
+
+.btn-merge:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Story List */
 .story-list {
     display: grid;
@@ -977,6 +991,11 @@ body {
     }
     
     .btn-cache {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .btn-merge {
         padding: 0.6rem 0.8rem;
         font-size: 0.85rem;
     }

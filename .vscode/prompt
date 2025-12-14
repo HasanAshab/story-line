@@ -1,8 +1,16 @@
-I want another button Merge before the upload and download button.
-it will combine the download and upload func to make users workflow short
+The peras has so many buttons on it so that its making it harder to focus on writing,
+thats why add a 3 dot dropdown menu on each pera. and pack these button inside it
+1. move to top
+2. move to bottom
+3. complete with ai
+4. add/edit notes
+5. delete
 
-when clicked, download in merge mode then upload in merge mod (also require uplaod pass)
 
 
 
-i want a way to make read only any stories from the root () 
+i want a way to make read only any stories from the root (where all storylines listed)
+1. dont persist it to cloud, its only for device to device
+2. just store it to ls `storyline_app_meta` key. 
+3. when marked as readonly, never ever make any change or save.
+ just show in preview mode

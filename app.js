@@ -70,6 +70,7 @@ class StorylineApp {
       e.stopPropagation();
       this.toggleSyncDropdown('download');
     });
+    document.getElementById('mergeBtn').addEventListener('click', () => this.performFullMerge());
     document.getElementById('manageVersionsBtn').addEventListener('click', () => this.showVersionsModal());
 
     // Auto-save toggle
@@ -1160,6 +1161,140 @@ class StorylineApp {
         btn.disabled = false;
       }, 2000);
     }
+  }
+
+  // Full merge functionality - combines download and upload in merge mode
+  async performFullMerge() {
+    // Password verification first
+    if (!this.verifyUploadPassword('merge')) {
+      return;
+    }
+
+    // Confirmation dialog
+    const confirmMerge = confirm(
+      '🔄 Full Merge Operation\n\n' +
+      'This will:\n' +
+      '1. Download stories from cloud (merge mode)\n' +
+      '2. Upload the merged result back to cloud\n\n' +
+      'This ensures both local and cloud have the latest version of all stories.\n\n' +
+      'Continue with full merge?'
+    );
+    
+    if (!confirmMerge) {
+      return;
+    }
+
+    try {
+      const btn = document.getElementById('mergeBtn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+
+      // Step 1: Download from cloud in merge mode
+      btn.textContent = '⬇️ Downloading...';
+      await this.performMergeDownload();
+
+      // Step 2: Upload to cloud in merge mode
+      btn.textContent = '⬆️ Uploading...';
+      await this.performMergeUpload();
+
+      // Success
+      btn.textContent = '✅ Merge Complete!';
+      btn.style.background = '#28a745';
+
+      // Refresh versions if modal is open
+      this.refreshVersionsIfModalOpen();
+
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 3000);
+
+    } catch (error) {
+      console.error('Full merge failed:', error);
+      const btn = document.getElementById('mergeBtn');
+      btn.textContent = '❌ Merge Failed';
+      btn.style.background = '#dc3545';
+      
+      setTimeout(() => {
+        btn.textContent = '🔄 Merge';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 3000);
+
+      alert('Merge operation failed. Please try again or use individual sync buttons.');
+    }
+  }
+
+  async performMergeDownload() {
+    // Wait for Firebase to be available
+    if (!window.db) {
+      throw new Error('Firebase not initialized');
+    }
+
+    const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+    const userDocRef = doc(window.db, 'storylines', 'user_data');
+    const docSnap = await getDoc(userDocRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('No cloud data found');
+    }
+
+    const data = docSnap.data();
+    const cloudStories = data.stories || {};
+
+    // Merge local and cloud stories (keeping latest version of each)
+    const mergedStories = this.mergeStories(this.stories, cloudStories);
+
+    // Update local stories with merged result
+    this.stories = mergedStories;
+    this.saveStories();
+  }
+
+  async performMergeUpload() {
+    // Wait for Firebase to be available
+    if (!window.db) {
+      throw new Error('Firebase not initialized');
+    }
+
+    const { doc, getDoc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+    const userDocRef = doc(window.db, 'storylines', 'user_data');
+
+    // Update timestamps for all stories being uploaded
+    Object.values(this.stories).forEach(story => {
+      story.lastSyncAt = new Date().toISOString();
+    });
+
+    // Get existing versions to maintain version history
+    const existingDoc = await getDoc(userDocRef);
+    let versions = [];
+    
+    if (existingDoc.exists()) {
+      const existingData = existingDoc.data();
+      versions = existingData.versions || [];
+      
+      // Add current data as a new version if it exists
+      if (existingData.stories) {
+        versions.unshift({
+          timestamp: existingData.lastSync || new Date().toISOString(),
+          stories: existingData.stories,
+          description: `Backup from ${new Date(existingData.lastSync || new Date()).toLocaleString()}`
+        });
+      }
+    }
+    
+    // Keep only the last 5 versions
+    versions = versions.slice(0, 5);
+
+    // Upload merged stories
+    await setDoc(userDocRef, {
+      stories: this.stories,
+      lastSync: new Date().toISOString(),
+      versions: versions
+    });
+
+    // Save updated timestamps locally
+    this.saveStories();
   }
 
   // Auto-save functionality

@@ -70,6 +70,7 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Team Collaboration**: Merge mode enables multiple users to work on different stories simultaneously
 - **Upload to Cloud**: Sync local stories to Firebase cloud storage with mode selection
 - **Download from Cloud**: Retrieve stories from cloud to local device with merge options
+- **Full Merge Button**: One-click operation that downloads and uploads in merge mode for streamlined workflow
 - **Conflict Detection**: Warns about potential data loss before sync operations
 - **Password Protection**: Secure uploads with password verification
 - **Timestamp Tracking**: Monitors last sync times for each story and uses them for merge decisions
@@ -89,6 +90,16 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Auto-Refresh**: Versions list automatically refreshes after cloud uploads
 - **Manual Refresh**: Refresh button to manually update the versions list anytime
 - **Instant Updates**: New versions appear immediately after successful cloud sync
+
+### One-Click Full Merge
+- **Streamlined Workflow**: Single button combines download and upload operations in merge mode
+- **Automatic Sequencing**: Downloads from cloud first, then uploads the merged result back
+- **Password Protection**: Requires upload password verification for security
+- **Progress Feedback**: Clear visual feedback showing download and upload phases
+- **Error Handling**: Graceful error handling with detailed feedback if operations fail
+- **Version Creation**: Automatically creates new backup versions during the merge process
+- **Conflict Resolution**: Uses smart merging to keep the latest version of each story
+- **Time Saving**: Eliminates the need to manually perform download then upload operations
 
 ### Manual Backup System
 - **Custom Naming**: Give your backups meaningful names or use automatic timestamps

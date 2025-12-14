@@ -3811,8 +3811,17 @@ class StorylineApp {
     const isPreviewMode = previewMode && previewMode.style.display === 'block';
     
     if (isPreviewMode) {
-      // In preview mode, scroll to the first preview paragraph
-      this.scrollToPreviewParagraph(1);
+      // In preview mode, find the first paragraph with content (by actual index)
+      let firstParagraphIndex = -1;
+      for (let i = 0; i < story.paragraphs.length; i++) {
+        if (story.paragraphs[i].content && story.paragraphs[i].content.trim()) {
+          firstParagraphIndex = i;
+          break;
+        }
+      }
+      if (firstParagraphIndex >= 0) {
+        this.scrollToPreviewParagraph(firstParagraphIndex + 1); // +1 because IDs are 1-based
+      }
     } else {
       // In edit mode, handle limited view and then scroll
       if (this.showLimitedParagraphs && story.paragraphs.length > 5) {
@@ -3840,9 +3849,17 @@ class StorylineApp {
     const isPreviewMode = previewMode && previewMode.style.display === 'block';
     
     if (isPreviewMode) {
-      // In preview mode, scroll to the last preview paragraph
-      const lastParagraphNum = story.paragraphs.filter(p => p.content && p.content.trim()).length;
-      this.scrollToPreviewParagraph(lastParagraphNum);
+      // In preview mode, find the last paragraph with content (by actual index)
+      let lastParagraphIndex = -1;
+      for (let i = story.paragraphs.length - 1; i >= 0; i--) {
+        if (story.paragraphs[i].content && story.paragraphs[i].content.trim()) {
+          lastParagraphIndex = i;
+          break;
+        }
+      }
+      if (lastParagraphIndex >= 0) {
+        this.scrollToPreviewParagraph(lastParagraphIndex + 1); // +1 because IDs are 1-based
+      }
     } else {
       // In edit mode, scroll to last paragraph
       const lastIndex = story.paragraphs.length - 1;

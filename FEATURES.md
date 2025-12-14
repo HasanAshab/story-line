@@ -44,6 +44,7 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Universal Navigation**: Jump functionality works in both edit and preview modes
 - **Smart Sticky Navigation**: Context-aware floating buttons that appear only when needed based on scroll position
 - **Cross-Mode Navigation**: Top/bottom navigation works seamlessly across edit and preview modes
+- **Read-Only Compatible**: Navigation functions work correctly in read-only stories opened in preview mode
 - **Keyboard Shortcuts**: Ctrl+G (Cmd+G) to jump to paragraph, Home/End keys for top/bottom navigation
 
 ### Search & Discovery

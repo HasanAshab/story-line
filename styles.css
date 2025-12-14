@@ -882,6 +882,7 @@ body {
 .paragraph-controls {
     display: flex;
     gap: 0.25rem;
+    align-items: center;
 }
 
 .control-btn {
@@ -895,6 +896,89 @@ body {
 
 .control-btn:hover {
     background: #e0e0e0;
+}
+
+/* Paragraph Dropdown Styles */
+.paragraph-dropdown {
+    position: relative;
+}
+
+.dropdown-toggle {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #666;
+}
+
+.dropdown-toggle:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.paragraph-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    min-width: 180px;
+    z-index: 1000;
+    display: none;
+    padding: 0.5rem 0;
+}
+
+.paragraph-dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover:not(:disabled) {
+    background: #f8f9fa;
+}
+
+.dropdown-item:disabled {
+    color: #999;
+    cursor: not-allowed;
+}
+
+.dropdown-item.has-notes {
+    color: #007bff;
+    font-weight: 500;
+}
+
+.dropdown-item.ai-complete-item {
+    color: #28a745;
+}
+
+.dropdown-item.delete-item {
+    color: #dc3545;
+}
+
+.dropdown-item.delete-item:hover:not(:disabled) {
+    background: #fff5f5;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #e9ecef;
+    margin: 0.5rem 0;
 }
 
 .paragraph-heading {
@@ -2159,6 +2243,22 @@ body {
     .dropdown-label {
         padding: 0.4rem 0.8rem;
         font-size: 0.75rem;
+    }
+    
+    /* Paragraph Dropdown Mobile */
+    .paragraph-dropdown-menu {
+        right: -20px;
+        min-width: 160px;
+    }
+    
+    .paragraph-dropdown-menu .dropdown-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .dropdown-toggle {
+        padding: 0.3rem 0.6rem;
+        font-size: 1.1rem;
     }
 }
 

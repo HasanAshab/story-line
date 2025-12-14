@@ -516,12 +516,28 @@ class StorylineApp {
                             </span>
                         </div>
                         <div class="paragraph-controls">
-                            <button class="control-btn drag-handle" data-index="${index}">⋮⋮</button>
-                            <button class="control-btn" onclick="app.moveParagraph(${index}, -1)" ${index === 0 ? 'disabled' : ''} title="Move to top">⬆️</button>
-                            <button class="control-btn" onclick="app.moveParagraph(${index}, 1)" ${index === story.paragraphs.length - 1 ? 'disabled' : ''} title="Move to bottom">⬇️</button>
-                            <button class="control-btn ai-complete-btn" onclick="app.completeParagraphWithAI(${index})" title="Complete with AI">🤖</button>
-                            <button class="control-btn ${paragraph.notes && paragraph.notes.length > 0 ? 'has-notes' : ''}" onclick="app.showParagraphNoteModal(${index})" title="Add/Edit Notes">📝</button>
-                            <button class="control-btn" onclick="app.deleteParagraph(${index})">🗑️</button>
+                            <button class="control-btn drag-handle" data-index="${index}" title="Drag to reorder">⋮⋮</button>
+                            <div class="paragraph-dropdown">
+                                <button class="control-btn dropdown-toggle" onclick="app.toggleParagraphDropdown(${index})" title="More actions">⋯</button>
+                                <div class="paragraph-dropdown-menu" id="paragraphMenu${index}">
+                                    <button class="dropdown-item" onclick="app.moveParagraph(${index}, -1); app.closeParagraphDropdown(${index})" ${index === 0 ? 'disabled' : ''}>
+                                        ⬆️ Move to Top
+                                    </button>
+                                    <button class="dropdown-item" onclick="app.moveParagraph(${index}, 1); app.closeParagraphDropdown(${index})" ${index === story.paragraphs.length - 1 ? 'disabled' : ''}>
+                                        ⬇️ Move to Bottom
+                                    </button>
+                                    <button class="dropdown-item ai-complete-item" onclick="app.completeParagraphWithAI(${index}); app.closeParagraphDropdown(${index})">
+                                        🤖 Complete with AI
+                                    </button>
+                                    <button class="dropdown-item ${paragraph.notes && paragraph.notes.length > 0 ? 'has-notes' : ''}" onclick="app.showParagraphNoteModal(${index}); app.closeParagraphDropdown(${index})">
+                                        📝 ${paragraph.notes && paragraph.notes.length > 0 ? 'Edit Notes' : 'Add Notes'}
+                                    </button>
+                                    <div class="dropdown-divider"></div>
+                                    <button class="dropdown-item delete-item" onclick="app.deleteParagraph(${index}); app.closeParagraphDropdown(${index})">
+                                        🗑️ Delete
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="paragraph-content-area" ${isCollapsed ? 'style="display: none;"' : ''}>
@@ -1928,6 +1944,41 @@ class StorylineApp {
     if (searchInput && searchInput.value.trim()) {
       this.filterParagraphs(searchInput.value);
     }
+  }
+
+  // Paragraph dropdown functionality
+  toggleParagraphDropdown(index) {
+    const menu = document.getElementById(`paragraphMenu${index}`);
+    const isOpen = menu.classList.contains('show');
+    
+    // Close all other dropdowns first
+    this.closeAllParagraphDropdowns();
+    
+    if (!isOpen) {
+      menu.classList.add('show');
+      
+      // Close dropdown when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.paragraph-dropdown')) {
+            this.closeAllParagraphDropdowns();
+          }
+        }, { once: true });
+      }, 0);
+    }
+  }
+
+  closeParagraphDropdown(index) {
+    const menu = document.getElementById(`paragraphMenu${index}`);
+    if (menu) {
+      menu.classList.remove('show');
+    }
+  }
+
+  closeAllParagraphDropdowns() {
+    document.querySelectorAll('.paragraph-dropdown-menu').forEach(menu => {
+      menu.classList.remove('show');
+    });
   }
 
   escapeHtml(text) {

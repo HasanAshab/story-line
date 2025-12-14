@@ -18,6 +18,7 @@ class StorylineApp {
     this.isPWA = this.detectPWAMode(); // Detect if running as PWA
     this.loadInitialAutoSavePreference();
     this.loadUploadPassword();
+    this.loadThemePreference();
     this.init();
   }
 
@@ -38,6 +39,7 @@ class StorylineApp {
     // Navigation
     document.getElementById('newStoryBtn').addEventListener('click', () => this.createNewStory());
     document.getElementById('backBtn').addEventListener('click', () => this.handleBackButton());
+    document.getElementById('themeToggleBtn').addEventListener('click', () => this.toggleTheme());
 
     // Story actions
     document.getElementById('saveStoryBtn').addEventListener('click', () => this.saveCurrentStory());
@@ -390,6 +392,35 @@ class StorylineApp {
     this.storyMeta[storyId].readOnly = !this.storyMeta[storyId].readOnly;
     this.saveStoryMeta();
     this.renderStoryList();
+  }
+
+  loadThemePreference() {
+    const savedTheme = this.storyMeta.theme || 'light';
+    this.currentTheme = savedTheme;
+    this.applyTheme(savedTheme);
+  }
+
+  toggleTheme() {
+    const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
+    this.currentTheme = newTheme;
+    this.storyMeta.theme = newTheme;
+    this.saveStoryMeta();
+    this.applyTheme(newTheme);
+  }
+
+  applyTheme(theme) {
+    const body = document.body;
+    const themeBtn = document.getElementById('themeToggleBtn');
+    
+    if (theme === 'dark') {
+      body.classList.add('dark-theme');
+      body.classList.remove('light-theme');
+      if (themeBtn) themeBtn.textContent = '☀️';
+    } else {
+      body.classList.add('light-theme');
+      body.classList.remove('dark-theme');
+      if (themeBtn) themeBtn.textContent = '🌙';
+    }
   }
 
   generateId() {

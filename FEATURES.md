@@ -105,6 +105,16 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Manual Refresh**: Refresh button to manually update the versions list anytime
 - **Instant Updates**: New versions appear immediately after successful cloud sync
 
+### Dark Theme System
+- **Complete Dark Mode**: Comprehensive dark theme covering all UI elements
+- **Eye-Friendly Colors**: Carefully chosen dark colors to reduce eye strain during long writing sessions
+- **Smart Contrast**: Optimized text contrast for excellent readability in dark mode
+- **Consistent Theming**: All components (modals, dropdowns, forms) follow the dark theme
+- **Theme Toggle**: Convenient moon/sun icon in header for instant theme switching
+- **Local Persistence**: Theme preference stored in device metadata, not synced to cloud
+- **Smooth Transitions**: Seamless switching between light and dark modes
+- **Mobile Optimized**: Dark theme works perfectly on all screen sizes and devices
+
 ### Read-Only Story Protection
 - **Toggle Protection**: One-click toggle to make stories read-only from the story list
 - **Visual Indicators**: Lock icons and muted colors clearly show read-only status
@@ -173,6 +183,9 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Material Design**: Google Material Design principles
 - **Smooth Animations**: Subtle transitions and hover effects
 - **Color Coding**: Visual hierarchy with consistent color scheme
+- **Dark Theme**: Complete dark mode with eye-friendly colors for low-light writing
+- **Theme Toggle**: One-click switching between light and dark themes
+- **Persistent Preference**: Theme choice saved locally and remembered across sessions
 
 ### Accessibility
 - **Keyboard Navigation**: Full keyboard accessibility

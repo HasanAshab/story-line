@@ -115,6 +115,7 @@ class StorylineApp {
       }
     });
     document.getElementById('createManualBackupBtn').addEventListener('click', () => this.createManualBackup());
+    document.getElementById('refreshVersionsBtn').addEventListener('click', () => this.refreshAutoVersions());
 
     // AI Settings modal functionality
     document.getElementById('closeAiSettingsBtn').addEventListener('click', () => this.closeAiSettingsModal());
@@ -998,6 +999,10 @@ class StorylineApp {
 
       btn.textContent = '✓ Synced to Cloud!';
       btn.style.background = '#4CAF50';
+      
+      // Refresh versions if the modal is open
+      this.refreshVersionsIfModalOpen();
+      
       setTimeout(() => {
         btn.textContent = originalText;
         btn.style.background = '';
@@ -1134,6 +1139,9 @@ class StorylineApp {
 
       btn.textContent = '✓ Synced from Cloud!';
       btn.style.background = '#4CAF50';
+
+      // Refresh versions if the modal is open
+      this.refreshVersionsIfModalOpen();
 
       setTimeout(() => {
         btn.textContent = originalText;
@@ -2368,6 +2376,67 @@ class StorylineApp {
     } catch (error) {
       console.error('Failed to delete manual backup:', error);
       alert('Failed to delete backup. Please try again.');
+    }
+  }
+
+  async refreshAutoVersions() {
+    try {
+      const btn = document.getElementById('refreshVersionsBtn');
+      const originalText = btn.textContent;
+      btn.textContent = '🔄 Refreshing...';
+      btn.disabled = true;
+
+      // Wait for Firebase to be available
+      if (!window.db) {
+        throw new Error('Firebase not initialized');
+      }
+
+      const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js');
+      const userDocRef = doc(window.db, 'storylines', 'user_data');
+      const docSnap = await getDoc(userDocRef);
+
+      let versions = [];
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        versions = data.versions || [];
+      }
+
+      this.renderVersionsList(versions);
+
+      btn.textContent = '✅ Refreshed!';
+      btn.style.background = '#4CAF50';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 1500);
+
+    } catch (error) {
+      console.error('Failed to refresh versions:', error);
+      const btn = document.getElementById('refreshVersionsBtn');
+      btn.textContent = '❌ Refresh Failed';
+      btn.style.background = '#f44336';
+      setTimeout(() => {
+        btn.textContent = '🔄 Refresh';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 2000);
+      
+      // Show error message in versions list
+      document.getElementById('versionsList').innerHTML = '<div class="versions-empty">Failed to refresh versions. Cloud sync may not be available.</div>';
+    }
+  }
+
+  refreshVersionsIfModalOpen() {
+    // Check if versions modal is open and auto tab is active
+    const modal = document.getElementById('versionsModal');
+    const autoTab = document.getElementById('autoVersionsTab');
+    
+    if (modal && modal.style.display === 'flex' && autoTab && autoTab.classList.contains('active')) {
+      // Add a small delay to ensure the upload has completed
+      setTimeout(() => {
+        this.refreshAutoVersions();
+      }, 1000);
     }
   }
 

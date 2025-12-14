@@ -86,6 +86,9 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Smart Backup**: Each upload creates a new version while maintaining the 5-version limit
 - **Manual Backup Management**: Create, preview, restore, and delete manual backups with full control
 - **Unlimited Manual Storage**: No limit on the number of manual backups you can create
+- **Auto-Refresh**: Versions list automatically refreshes after cloud uploads
+- **Manual Refresh**: Refresh button to manually update the versions list anytime
+- **Instant Updates**: New versions appear immediately after successful cloud sync
 
 ### Manual Backup System
 - **Custom Naming**: Give your backups meaningful names or use automatic timestamps

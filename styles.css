@@ -1374,6 +1374,29 @@ body {
     box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
 }
 
+/* Version Controls */
+.versions-controls {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: 1px solid #6c757d;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    border-color: #5a6268;
+}
+
 .versions-info {
     background: #e3f2fd;
     border: 1px solid #2196F3;
@@ -1583,6 +1606,15 @@ body {
     
     .backup-name-input {
         width: 100%;
+    }
+    
+    .versions-controls {
+        margin-top: 0.75rem;
+    }
+    
+    .btn-secondary {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
     }
     
     .version-item {

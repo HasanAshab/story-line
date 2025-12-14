@@ -192,7 +192,7 @@
           <div id="progressContent" class="progress-content"></div>
         </div>
       </div>
-      
+
       <!-- Sticky Navigation Buttons -->
       <div id="stickyNavigation" class="sticky-navigation" style="display: none;">
         <button id="jumpToTopBtn" class="sticky-btn" title="Jump to top">⬆️</button>
@@ -258,6 +258,10 @@
         <div id="autoVersionsContent" class="version-tab-content active">
           <div class="versions-info">
             <p>Your last 5 backup versions are stored automatically when you upload to cloud. You can preview or restore any version.</p>
+            <p><small>💡 New versions appear immediately after upload. Use refresh if needed.</small></p>
+            <div class="versions-controls">
+              <button id="refreshVersionsBtn" class="btn btn-secondary">🔄 Refresh</button>
+            </div>
           </div>
           <div id="versionsList" class="versions-list">
             <!-- Auto versions will be rendered here -->

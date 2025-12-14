@@ -1,17 +1,8 @@
-1. load only the peras which are on screen
-2. merge mode
-3. Storylines sessions
-4. manual backups
+I want another button Merge before the upload and download button.
+it will combine the download and upload func to make users workflow short
 
-I want a change to the core system. 
-Now the hierarchy will be:
-Storyline -> Sessions -> Peragraphs
+when clicked, download in merge mode then upload in merge mod (also require uplaod pass)
 
-Note: there is already data exist on localstorage,
-migrate gracefully
 
-I may:
-1. also reorder sessions
-2. On each sessions 
-    a) show the ending (the heading of next sessions first pera)
-    b) show the Starting (the heading of prev sessions last pera)
+
+i want a way to make read only any stories from the root () 

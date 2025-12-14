@@ -1970,6 +1970,13 @@ class StorylineApp {
       return;
     }
 
+    // Sort stories alphabetically by title (case-insensitive)
+    filteredIds.sort((a, b) => {
+      const titleA = (this.stories[a].title || 'Untitled Story').toLowerCase();
+      const titleB = (this.stories[b].title || 'Untitled Story').toLowerCase();
+      return titleA.localeCompare(titleB);
+    });
+
     // Render filtered stories
     container.innerHTML = filteredIds.map(id => {
       const story = this.stories[id];

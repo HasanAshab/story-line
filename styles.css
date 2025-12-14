@@ -293,6 +293,61 @@ body {
     color: #2196F3;
 }
 
+/* Story Card Header */
+.story-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.story-card-header h3 {
+    margin: 0;
+    flex: 1;
+}
+
+/* Read-only Toggle Button */
+.read-only-toggle {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #666;
+    transition: all 0.2s ease;
+    margin-left: 0.5rem;
+}
+
+.read-only-toggle:hover {
+    background: #f5f5f5;
+    border-color: #bbb;
+}
+
+.read-only-toggle.active {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+/* Read-only Story Card */
+.story-card.read-only {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.story-card.read-only h3 {
+    color: #6c757d;
+}
+
+.story-card.read-only .story-meta {
+    color: #6c757d;
+}
+
+.story-card.read-only:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
 .story-meta {
     font-size: 0.8rem;
     color: #757575;
@@ -1061,6 +1116,19 @@ body {
     
     .show-all-btn {
         padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Read-only Mobile Styles */
+    .story-card-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+    }
+    
+    .read-only-toggle {
+        align-self: flex-end;
+        padding: 0.3rem 0.6rem;
         font-size: 0.8rem;
     }
     

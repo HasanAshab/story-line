@@ -1,7 +1,9 @@
 class StorylineApp {
   constructor() {
     this.storageKey = 'storyline_app';
+    this.metaStorageKey = 'storyline_app_meta';
     this.stories = this.loadStories();
+    this.storyMeta = this.loadStoryMeta();
     this.currentStoryId = null;
     this.autoSaveEnabled = false;
     this.autoSaveTimeout = null;
@@ -368,6 +370,28 @@ class StorylineApp {
     localStorage.setItem(this.storageKey, JSON.stringify(this.stories));
   }
 
+  loadStoryMeta() {
+    const stored = localStorage.getItem(this.metaStorageKey);
+    return stored ? JSON.parse(stored) : {};
+  }
+
+  saveStoryMeta() {
+    localStorage.setItem(this.metaStorageKey, JSON.stringify(this.storyMeta));
+  }
+
+  isStoryReadOnly(storyId) {
+    return this.storyMeta[storyId] && this.storyMeta[storyId].readOnly === true;
+  }
+
+  toggleStoryReadOnly(storyId) {
+    if (!this.storyMeta[storyId]) {
+      this.storyMeta[storyId] = {};
+    }
+    this.storyMeta[storyId].readOnly = !this.storyMeta[storyId].readOnly;
+    this.saveStoryMeta();
+    this.renderStoryList();
+  }
+
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
@@ -440,7 +464,17 @@ class StorylineApp {
   }
 
   editStory(id) {
-    this.showStoryEditor(id);
+    if (this.isStoryReadOnly(id)) {
+      // Show in preview mode for read-only stories
+      this.currentStoryId = id;
+      this.showStoryEditor(id);
+      // Automatically switch to preview mode
+      setTimeout(() => {
+        this.showPreview();
+      }, 100);
+    } else {
+      this.showStoryEditor(id);
+    }
   }
 
   renderStoryEditor() {
@@ -451,7 +485,12 @@ class StorylineApp {
       return;
     }
 
-    document.getElementById('storyTitle').value = story.title || '';
+    const isReadOnly = this.isStoryReadOnly(this.currentStoryId);
+    
+    // Set title and disable if read-only
+    const titleInput = document.getElementById('storyTitle');
+    titleInput.value = story.title || '';
+    titleInput.disabled = isReadOnly;
     
     // Initialize progress data if it doesn't exist
     if (!story.progressData) {
@@ -465,11 +504,18 @@ class StorylineApp {
     this.originalStoryState = JSON.parse(JSON.stringify(story));
     this.hasUnsavedChanges = false;
     
-    this.loadAutoSavePreference();
-    this.setupAutoSaveListeners();
-    this.setupChangeDetection();
+    // Only setup auto-save and change detection for editable stories
+    if (!isReadOnly) {
+      this.loadAutoSavePreference();
+      this.setupAutoSaveListeners();
+      this.setupChangeDetection();
+    }
+    
     this.renderParagraphs();
     this.updateProgressButton();
+    
+    // Update UI elements based on read-only status
+    this.updateReadOnlyUI(isReadOnly);
   }
 
   renderParagraphs() {
@@ -548,11 +594,13 @@ class StorylineApp {
                         <input type="text" class="paragraph-heading" placeholder="Heading (optional)" 
                                value="${this.escapeHtml(paragraph.heading || '')}" 
                                onchange="app.updateParagraphHeading(${index}, this.value)"
-                               oninput="app.triggerAutoSave(); app.markAsChanged();">
+                               oninput="app.triggerAutoSave(); app.markAsChanged();"
+                               ${this.isStoryReadOnly(this.currentStoryId) ? 'disabled' : ''}>
                         <textarea class="paragraph-content" placeholder="Write your paragraph here..." 
                                   spellcheck="false"
                                   onchange="app.updateParagraphContent(${index}, this.value)"
-                                  oninput="app.triggerAutoSave(); app.markAsChanged();">${this.escapeHtml(paragraph.content || '')}</textarea>
+                                  oninput="app.triggerAutoSave(); app.markAsChanged();"
+                                  ${this.isStoryReadOnly(this.currentStoryId) ? 'disabled' : ''}>${this.escapeHtml(paragraph.content || '')}</textarea>
                     </div>
                 </div>
             `;
@@ -570,6 +618,12 @@ class StorylineApp {
   }
 
   addParagraph() {
+    // Prevent adding paragraphs to read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      alert('This story is read-only and cannot be edited.');
+      return;
+    }
+    
     const story = this.stories[this.currentStoryId];
     if (!story.paragraphs) story.paragraphs = [];
 
@@ -595,6 +649,12 @@ class StorylineApp {
   }
 
   addParagraphAfter(index) {
+    // Prevent adding paragraphs to read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      alert('This story is read-only and cannot be edited.');
+      return;
+    }
+    
     const story = this.stories[this.currentStoryId];
     if (!story.paragraphs) story.paragraphs = [];
 
@@ -632,6 +692,11 @@ class StorylineApp {
   }
 
   updateParagraphHeading(index, heading) {
+    // Prevent editing read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      return;
+    }
+    
     const story = this.stories[this.currentStoryId];
     story.paragraphs[index].heading = heading;
     story.updatedAt = new Date().toISOString();
@@ -639,6 +704,11 @@ class StorylineApp {
   }
 
   updateParagraphContent(index, content) {
+    // Prevent editing read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      return;
+    }
+    
     const story = this.stories[this.currentStoryId];
     story.paragraphs[index].content = content;
     story.updatedAt = new Date().toISOString();
@@ -646,6 +716,12 @@ class StorylineApp {
   }
 
   deleteParagraph(index) {
+    // Prevent deleting from read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      alert('This story is read-only and cannot be edited.');
+      return;
+    }
+    
     if (confirm('Delete this paragraph?')) {
       const story = this.stories[this.currentStoryId];
       story.paragraphs.splice(index, 1);
@@ -681,6 +757,12 @@ class StorylineApp {
   }
 
   saveCurrentStory() {
+    // Prevent saving read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      alert('This story is read-only and cannot be saved.');
+      return;
+    }
+    
     const story = this.stories[this.currentStoryId];
     const title = document.getElementById('storyTitle').value.trim();
 
@@ -1856,12 +1938,22 @@ class StorylineApp {
       const preview = this.getStoryPreview(story);
       const paragraphCount = story.paragraphs ? story.paragraphs.length : 0;
 
+      const isReadOnly = this.isStoryReadOnly(id);
+      
       return `
-        <div class="story-card" onclick="app.editStory('${id}')">
-          <h3>${this.escapeHtml(story.title || 'Untitled Story')}</h3>
+        <div class="story-card ${isReadOnly ? 'read-only' : ''}" onclick="app.editStory('${id}')">
+          <div class="story-card-header">
+            <h3>${this.escapeHtml(story.title || 'Untitled Story')} ${isReadOnly ? '🔒' : ''}</h3>
+            <button class="read-only-toggle ${isReadOnly ? 'active' : ''}" 
+                    onclick="event.stopPropagation(); app.toggleStoryReadOnly('${id}')" 
+                    title="${isReadOnly ? 'Make editable' : 'Make read-only'}">
+              ${isReadOnly ? '🔓' : '🔒'}
+            </button>
+          </div>
           <div class="story-meta">
             ${paragraphCount} paragraph${paragraphCount !== 1 ? 's' : ''} • 
             ${new Date(story.updatedAt || story.createdAt).toLocaleDateString()}
+            ${isReadOnly ? ' • Read-only' : ''}
           </div>
           <div class="story-preview">${preview}</div>
         </div>
@@ -2020,6 +2112,49 @@ class StorylineApp {
     document.querySelectorAll('.paragraph-dropdown-menu').forEach(menu => {
       menu.classList.remove('show');
     });
+  }
+
+  updateReadOnlyUI(isReadOnly) {
+    // Disable/enable editor buttons
+    const editorButtons = [
+      'saveStoryBtn', 'deleteStoryBtn', 'addParagraphBtn', 
+      'expandAllBtn', 'collapseAllBtn', 'showAllParagraphsBtn'
+    ];
+    
+    editorButtons.forEach(buttonId => {
+      const button = document.getElementById(buttonId);
+      if (button) {
+        button.disabled = isReadOnly;
+        if (isReadOnly) {
+          button.style.opacity = '0.5';
+          button.style.cursor = 'not-allowed';
+        } else {
+          button.style.opacity = '';
+          button.style.cursor = '';
+        }
+      }
+    });
+
+    // Update auto-save toggle
+    const autoSaveToggle = document.getElementById('autoSaveToggle');
+    if (autoSaveToggle) {
+      autoSaveToggle.disabled = isReadOnly;
+    }
+
+    // Show read-only indicator in header if needed
+    const storyHeader = document.querySelector('.story-header');
+    if (storyHeader) {
+      const existingIndicator = storyHeader.querySelector('.read-only-indicator');
+      if (isReadOnly && !existingIndicator) {
+        const indicator = document.createElement('span');
+        indicator.className = 'read-only-indicator';
+        indicator.textContent = '🔒 Read-Only';
+        indicator.style.cssText = 'color: #666; font-size: 0.9rem; margin-left: 1rem;';
+        storyHeader.appendChild(indicator);
+      } else if (!isReadOnly && existingIndicator) {
+        existingIndicator.remove();
+      }
+    }
   }
 
   escapeHtml(text) {

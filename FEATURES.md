@@ -18,6 +18,9 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 ### Story Management
 - **Create New Stories**: Start fresh stories with customizable titles
 - **Story List View**: Browse all your stories with previews and metadata
+- **Read-Only Mode**: Mark stories as read-only to prevent accidental editing
+- **Local Read-Only Storage**: Read-only status stored locally, not synced to cloud
+- **Preview-Only Access**: Read-only stories automatically open in preview mode
 - **Auto-Save**: Optional automatic saving as you type (1-second delay)
 - **Manual Save**: Explicit save control for your work
 - **Delete Stories**: Remove unwanted stories with confirmation
@@ -94,6 +97,16 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Auto-Refresh**: Versions list automatically refreshes after cloud uploads
 - **Manual Refresh**: Refresh button to manually update the versions list anytime
 - **Instant Updates**: New versions appear immediately after successful cloud sync
+
+### Read-Only Story Protection
+- **Toggle Protection**: One-click toggle to make stories read-only from the story list
+- **Visual Indicators**: Lock icons and muted colors clearly show read-only status
+- **Complete Edit Prevention**: All editing functions disabled for read-only stories
+- **Preview Mode Access**: Read-only stories automatically open in preview mode
+- **Local Storage Only**: Read-only status stored locally, not synced to cloud for device-specific control
+- **Form Disabling**: All input fields, buttons, and editing controls disabled when read-only
+- **Safe Sharing**: Perfect for protecting reference stories or completed drafts
+- **Easy Toggle**: Quick unlock/lock with visual feedback and confirmation
 
 ### One-Click Full Merge
 - **Streamlined Workflow**: Single button combines download and upload operations in merge mode

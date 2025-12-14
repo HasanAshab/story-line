@@ -1201,6 +1201,9 @@ class StorylineApp {
       btn.textContent = '✅ Merge Complete!';
       btn.style.background = '#28a745';
 
+      // Refresh the story list to show any new/updated stories
+      this.renderStoryList();
+
       // Refresh versions if modal is open
       this.refreshVersionsIfModalOpen();
 

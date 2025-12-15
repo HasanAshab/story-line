@@ -90,6 +90,7 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Full Merge Button**: One-click operation that downloads and uploads in merge mode for streamlined workflow
 - **Conflict Detection**: Warns about potential data loss before sync operations
 - **Password Protection**: Secure uploads with password verification
+- **Password Memory**: Upload password stored locally for convenience, re-prompted if incorrect
 - **Timestamp Tracking**: Monitors last sync times for each story and uses them for merge decisions
 - **Progress Sync**: Progress tracking data is included in cloud synchronization
 - **AI Settings Sync**: AI preferences and API keys are preserved during cloud sync operations
@@ -147,6 +148,14 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Safety Confirmations**: Multiple confirmation dialogs prevent accidental data loss
 - **Instant Creation**: Create backups instantly without network requirements
 - **Detailed Previews**: Preview backup contents before restoration with story counts and metadata
+
+### Smart Password Management
+- **Password Storage**: Upload password stored locally in device metadata for convenience
+- **Automatic Retry**: Stored password tried first, prompts only if incorrect or missing
+- **Security Validation**: Incorrect stored passwords automatically cleared and re-prompted
+- **Seamless Experience**: Enter password once, reuse automatically until it changes
+- **Local Only**: Password stored locally, never synced to cloud for security
+- **Smart Prompting**: Only asks for password when needed, not on every upload
 
 ### Sync Safety
 - **Mode Selection**: Clear dropdown menus to choose sync behavior before operation

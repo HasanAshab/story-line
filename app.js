@@ -423,6 +423,20 @@ class StorylineApp {
     }
   }
 
+  getStoredUploadPassword() {
+    return this.storyMeta.uploadPassword || null;
+  }
+
+  storeUploadPassword(password) {
+    this.storyMeta.uploadPassword = password;
+    this.saveStoryMeta();
+  }
+
+  clearStoredUploadPassword() {
+    delete this.storyMeta.uploadPassword;
+    this.saveStoryMeta();
+  }
+
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
@@ -1490,14 +1504,46 @@ class StorylineApp {
       return false;
     }
 
-    const enteredPassword = prompt('Enter upload password:');
-    if (!enteredPassword) {
-      return false;
+    // Check if we have a stored password to try first
+    const storedPassword = this.getStoredUploadPassword();
+    let passwordToTry = storedPassword;
+    let isStoredPassword = !!storedPassword;
+
+    // If no stored password or we need to prompt, ask user
+    if (!passwordToTry) {
+      passwordToTry = prompt('Enter upload password:');
+      if (!passwordToTry) {
+        return false;
+      }
+      isStoredPassword = false;
     }
 
-    if (enteredPassword !== this.uploadPassword) {
-      alert('Incorrect password. Upload cancelled.');
-      return false;
+    // Verify the password
+    if (passwordToTry !== this.uploadPassword) {
+      if (isStoredPassword) {
+        // Stored password was wrong, clear it and ask for new one
+        this.clearStoredUploadPassword();
+        alert('Stored password is incorrect. Please enter the current password.');
+        
+        const newPassword = prompt('Enter upload password:');
+        if (!newPassword) {
+          return false;
+        }
+        
+        if (newPassword !== this.uploadPassword) {
+          alert('Incorrect password. Upload cancelled.');
+          return false;
+        }
+        
+        // Store the correct password
+        this.storeUploadPassword(newPassword);
+      } else {
+        alert('Incorrect password. Upload cancelled.');
+        return false;
+      }
+    } else if (!isStoredPassword) {
+      // Password was correct and it's not stored yet, store it
+      this.storeUploadPassword(passwordToTry);
     }
 
     if (mode === 'replace') {

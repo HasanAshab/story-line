@@ -140,14 +140,17 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Time Saving**: Eliminates the need to manually perform download then upload operations
 
 ### Manual Backup System
+- **Dual Storage Options**: Choose between Local (device-only) and Cloud (Firebase) manual backups
+- **Nested Tab Interface**: Local and Cloud tabs within Manual Backups for organized access
 - **Custom Naming**: Give your backups meaningful names or use automatic timestamps
-- **Local Storage**: Manual backups are stored locally in your browser, no cloud required
-- **Unlimited Backups**: Create as many manual backups as you need without restrictions
-- **Tab Interface**: Clean tabbed interface separating automatic and manual backups
-- **Full Management**: Create, preview, restore, and delete manual backups independently
+- **Unlimited Local Backups**: Create unlimited backups stored locally in your browser
+- **Cloud Manual Backups**: Store manual backups in Firebase with password protection
+- **Independent Management**: Create, preview, restore, and delete backups independently for each type
 - **Safety Confirmations**: Multiple confirmation dialogs prevent accidental data loss
-- **Instant Creation**: Create backups instantly without network requirements
+- **Instant Local Creation**: Create local backups instantly without network requirements
+- **Secure Cloud Creation**: Cloud backups require upload password for security
 - **Detailed Previews**: Preview backup contents before restoration with story counts and metadata
+- **Cross-Platform Cloud Access**: Cloud manual backups accessible from any device with your credentials
 
 ### Smart Password Management
 - **Password Storage**: Upload password stored locally in device metadata for convenience

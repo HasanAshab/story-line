@@ -274,15 +274,42 @@
 
         <!-- Manual Versions Content -->
         <div id="manualVersionsContent" class="version-tab-content">
-          <div class="versions-info">
-            <p>Create and manage your own named backups. Manual backups are unlimited and stored locally.</p>
-            <div class="manual-backup-controls">
-              <input type="text" id="manualBackupName" placeholder="Backup name (optional)" class="backup-name-input">
-              <button id="createManualBackupBtn" class="btn btn-primary">💾 Create Backup</button>
+          <!-- Manual Backup Sub-tabs -->
+          <div class="manual-backup-tabs">
+            <button id="localManualTab" class="manual-backup-tab active" onclick="app.showManualBackupTab('local')">
+              💾 Local
+            </button>
+            <button id="cloudManualTab" class="manual-backup-tab" onclick="app.showManualBackupTab('cloud')">
+              ☁️ Cloud
+            </button>
+          </div>
+
+          <!-- Local Manual Backups -->
+          <div id="localManualContent" class="manual-backup-tab-content active">
+            <div class="versions-info">
+              <p>Create and manage your own named backups stored locally on this device.</p>
+              <div class="manual-backup-controls">
+                <input type="text" id="localManualBackupName" placeholder="Backup name (optional)" class="backup-name-input">
+                <button id="createLocalManualBackupBtn" class="btn btn-primary">💾 Create Local Backup</button>
+              </div>
+            </div>
+            <div id="localManualVersionsList" class="versions-list">
+              <!-- Local manual versions will be rendered here -->
             </div>
           </div>
-          <div id="manualVersionsList" class="versions-list">
-            <!-- Manual versions will be rendered here -->
+
+          <!-- Cloud Manual Backups -->
+          <div id="cloudManualContent" class="manual-backup-tab-content">
+            <div class="versions-info">
+              <p>Create and manage your own named backups stored in the cloud. Requires upload password.</p>
+              <div class="manual-backup-controls">
+                <input type="text" id="cloudManualBackupName" placeholder="Backup name (optional)" class="backup-name-input">
+                <button id="createCloudManualBackupBtn" class="btn btn-primary">☁️ Create Cloud Backup</button>
+              </div>
+            </div>
+            <div id="cloudManualVersionsList" class="versions-list">
+              <!-- Cloud manual versions will be rendered here -->
+            </div>
           </div>
         </div>
       </div>

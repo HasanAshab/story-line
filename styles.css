@@ -1568,6 +1568,45 @@ body {
     display: block;
 }
 
+/* Manual Backup Sub-tabs */
+.manual-backup-tabs {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 1rem;
+}
+
+.manual-backup-tab {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s ease;
+}
+
+.manual-backup-tab:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.manual-backup-tab.active {
+    color: #2196F3;
+    border-bottom-color: #2196F3;
+    background: #f8f9fa;
+}
+
+.manual-backup-tab-content {
+    display: none;
+}
+
+.manual-backup-tab-content.active {
+    display: block;
+}
+
 /* Manual Backup Controls */
 .manual-backup-controls {
     display: flex;
@@ -1822,6 +1861,11 @@ body {
     
     .backup-name-input {
         width: 100%;
+    }
+    
+    .manual-backup-tab {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
     }
     
     .versions-controls {
@@ -3040,6 +3084,27 @@ body {
 }
 
 .dark-theme .version-tab-content {
+    background: #1a1a1a;
+}
+
+/* Dark Theme Manual Backup Sub-tabs */
+.dark-theme .manual-backup-tabs {
+    border-bottom-color: #404040;
+}
+
+.dark-theme .manual-backup-tab {
+    color: #bbb;
+    border-bottom-color: transparent;
+}
+
+.dark-theme .manual-backup-tab:hover {
+    background: #333;
+    color: #e0e0e0;
+}
+
+.dark-theme .manual-backup-tab.active {
+    color: #64B5F6;
+    border-bottom-color: #64B5F6;
     background: #1a1a1a;
 }
 

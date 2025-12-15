@@ -2393,8 +2393,13 @@ class StorylineApp {
           
           return `
             <div class="note-summary">
-              <div class="note-paragraph-title">
-                <strong>Paragraph ${actualIndex + 1}: ${this.escapeHtml(displayHeading)}</strong>
+              <div class="note-paragraph-header">
+                <div class="note-paragraph-title">
+                  <strong>Paragraph ${actualIndex + 1}: ${this.escapeHtml(displayHeading)}</strong>
+                </div>
+                <button class="note-jump-btn" onclick="app.jumpToParagraphFromNotes(${actualIndex})" title="Jump to this paragraph">
+                  🔍 Jump
+                </button>
               </div>
               <div class="note-content">
                 ${paragraph.notes.map(note => `<div class="note-item">${this.escapeHtml(note).replace(/\n/g, '<br>')}</div>`).join('')}
@@ -2411,6 +2416,14 @@ class StorylineApp {
 
   closeNotesModal() {
     document.getElementById('notesModal').style.display = 'none';
+  }
+
+  jumpToParagraphFromNotes(paragraphIndex) {
+    // Close the notes modal first
+    this.closeNotesModal();
+    
+    // Jump to the paragraph using the existing jump functionality
+    this.jumpToParagraphByNumber(paragraphIndex + 1); // +1 because jumpToParagraphByNumber expects 1-based indexing
   }
 
   showParagraphNoteModal(paragraphIndex) {

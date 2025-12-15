@@ -728,6 +728,40 @@ body {
     font-weight: 600;
 }
 
+/* Note Paragraph Header with Jump Button */
+.note-paragraph-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.note-jump-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.note-jump-btn:hover {
+    background: #1976D2;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.note-jump-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
 .note-summary .note-content {
     display: flex;
     flex-direction: column;
@@ -856,6 +890,18 @@ body {
     
     .note-actions {
         flex-direction: column;
+    }
+    
+    .note-paragraph-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .note-jump-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        align-self: flex-end;
     }
 }
 
@@ -2614,6 +2660,16 @@ body {
 .dark-theme .note-summary .note-item {
     background: #2c2c2c;
     border-left-color: #64B5F6;
+}
+
+.dark-theme .note-jump-btn {
+    background: #64B5F6;
+    color: #1a1a1a;
+}
+
+.dark-theme .note-jump-btn:hover {
+    background: #42A5F5;
+}
 }
 
 .dark-theme .note-content {

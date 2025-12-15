@@ -60,6 +60,10 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Paragraph Notes**: Attach specific notes to individual paragraphs
 - **Note Management**: Add, edit, and delete notes with full CRUD operations
 - **Visual Indicators**: Icons show which paragraphs have notes attached
+- **Jump to Paragraph**: Click "Jump" button in notes modal to instantly navigate to any paragraph
+- **Cross-Modal Navigation**: Seamlessly jump from notes view to specific paragraphs in the editor
+- **Smart Note Headers**: Each note shows paragraph number and heading with convenient jump access
+- **Mobile-Friendly Jumps**: Jump buttons work perfectly on mobile with responsive design
 
 ### Preview Mode
 - **Reading View**: Clean, formatted preview of your story

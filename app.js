@@ -3556,7 +3556,10 @@ class StorylineApp {
       return `
         <div class="api-key-item">
           <span class="api-key-text">${maskedKey}</span>
-          <button class="api-key-delete" onclick="app.removeApiKey(${index})" title="Remove API key">🗑️</button>
+          <div class="api-key-actions">
+            <button class="api-key-copy" onclick="app.copyApiKey(${index})" title="Copy API key">📋</button>
+            <button class="api-key-delete" onclick="app.removeApiKey(${index})" title="Remove API key">🗑️</button>
+          </div>
         </div>
       `;
     }).join('');
@@ -3591,6 +3594,62 @@ class StorylineApp {
       const story = this.stories[this.currentStoryId];
       story.aiSettings.apiKeys.splice(index, 1);
       this.renderApiKeys();
+    }
+  }
+
+  copyApiKey(index) {
+    const story = this.stories[this.currentStoryId];
+    const apiKey = story.aiSettings.apiKeys[index];
+    
+    if (!apiKey) {
+      alert('API key not found');
+      return;
+    }
+
+    // Use the modern Clipboard API if available
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(apiKey).then(() => {
+        // Show temporary success feedback
+        const copyBtn = document.querySelector(`[onclick="app.copyApiKey(${index})"]`);
+        if (copyBtn) {
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = '✅';
+          copyBtn.style.color = '#4CAF50';
+          setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.style.color = '';
+          }, 2000);
+        }
+      }).catch(err => {
+        console.error('Failed to copy API key:', err);
+        this.fallbackCopyApiKey(apiKey);
+      });
+    } else {
+      // Fallback for older browsers or non-secure contexts
+      this.fallbackCopyApiKey(apiKey);
+    }
+  }
+
+  fallbackCopyApiKey(apiKey) {
+    // Create a temporary textarea element
+    const textArea = document.createElement('textarea');
+    textArea.value = apiKey;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      document.execCommand('copy');
+      alert('API key copied to clipboard!');
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      // Show the key in a prompt as last resort
+      prompt('Copy this API key manually:', apiKey);
+    } finally {
+      document.body.removeChild(textArea);
     }
   }
 

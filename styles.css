@@ -2133,6 +2133,29 @@ body {
     font-family: monospace;
     font-size: 0.85rem;
     color: #333;
+    flex: 1;
+}
+
+.api-key-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.api-key-copy {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #2196F3;
+    transition: all 0.2s ease;
+}
+
+.api-key-copy:hover {
+    background: #e3f2fd;
+    transform: scale(1.1);
 }
 
 .api-key-delete {
@@ -2142,11 +2165,13 @@ body {
     padding: 0.25rem;
     border-radius: 4px;
     font-size: 0.9rem;
-    transition: background 0.2s;
+    color: #f44336;
+    transition: all 0.2s ease;
 }
 
 .api-key-delete:hover {
     background: #ffebee;
+    transform: scale(1.1);
 }
 
 .add-api-key-section {
@@ -2529,6 +2554,16 @@ body {
         align-items: stretch;
     }
     
+    .api-key-actions {
+        gap: 0.5rem;
+    }
+    
+    .api-key-copy,
+    .api-key-delete {
+        padding: 0.4rem;
+        font-size: 1rem;
+    }
+    
     .setting-actions {
         flex-direction: column;
     }
@@ -2670,7 +2705,6 @@ body {
 .dark-theme .note-jump-btn:hover {
     background: #42A5F5;
 }
-}
 
 .dark-theme .note-content {
     background: #2c2c2c;
@@ -2752,6 +2786,22 @@ body {
 .dark-theme .api-key-item {
     background: #1a1a1a;
     border-color: #404040;
+}
+
+.dark-theme .api-key-text {
+    color: #e0e0e0;
+}
+
+.dark-theme .api-key-copy {
+    color: #64B5F6;
+}
+
+.dark-theme .api-key-copy:hover {
+    background: #1e3a5f;
+}
+
+.dark-theme .api-key-delete {
+    color: #f48fb1;
 }
 
 .dark-theme .api-key-delete:hover {

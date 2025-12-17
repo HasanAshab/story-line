@@ -3975,7 +3975,7 @@ class StorylineApp {
 
   getModelDescription(modelId) {
     const descriptions = {
-      'llama-3.1-70b-versatile': 'Large, high-quality model with excellent reasoning capabilities. Best for complex tasks.',
+      'llama-3.3-70b-versatile': 'Large, high-quality model with excellent reasoning capabilities. Best for complex tasks.',
       'llama-3.1-8b-instant': 'Fast, efficient model optimized for quick responses. Good balance of speed and quality.',
       'llama3-70b-8192': 'Previous generation Llama model with good performance.',
       'llama3-8b-8192': 'Smaller, faster version of Llama 3.',
@@ -4180,14 +4180,14 @@ class StorylineApp {
     // Select model based on mode
     let model;
     if (aiSettings.mode === 'custom') {
-      model = aiSettings.customModel || 'llama-3.1-70b-versatile';
+      model = aiSettings.customModel || 'llama-3.3-70b-versatile';
       if (!model) {
         throw new Error('No custom model selected. Please choose a model in AI Settings.');
       }
     } else if (aiSettings.mode === 'faster') {
       model = 'llama-3.1-8b-instant';
     } else {
-      model = 'llama-3.1-70b-versatile';
+      model = 'llama-3.3-70b-versatile';
     }
     
     // Build system prompt

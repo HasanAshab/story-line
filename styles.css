@@ -976,17 +976,36 @@ body {
     transition: all 0.3s ease;
 }
 
-/* Mobile Drag Handle */
+/* Drag Handle */
 .drag-handle {
     font-size: 1.2rem;
     color: #666;
     cursor: grab;
     padding: 0.5rem;
     touch-action: none;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+    background: #f0f0f0;
+    color: #333;
+    transform: scale(1.1);
 }
 
 .drag-handle:active {
     cursor: grabbing;
+    background: #e0e0e0;
+    transform: scale(0.95);
+}
+
+/* Prevent accidental dragging of paragraph items */
+.paragraph-item {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
 }
 
 /* Enhanced Drag States */
@@ -3031,6 +3050,19 @@ body {
 
 .dark-theme .paragraph-item:hover {
     border-color: #555;
+}
+
+.dark-theme .drag-handle {
+    color: #b0b0b0;
+}
+
+.dark-theme .drag-handle:hover {
+    background: #404040;
+    color: #e0e0e0;
+}
+
+.dark-theme .drag-handle:active {
+    background: #555;
 }
 
 .dark-theme .paragraph-title {

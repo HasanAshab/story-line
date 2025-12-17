@@ -606,7 +606,7 @@ class StorylineApp {
       const displayHeading = paragraph.heading || this.getAutoHeading(paragraph.content);
 
       return `
-                <div class="paragraph-item ${isCollapsed ? 'collapsed' : ''}" draggable="true" data-index="${index}">
+                <div class="paragraph-item ${isCollapsed ? 'collapsed' : ''}" data-index="${index}">
                     <div class="paragraph-header">
                         <div class="paragraph-title" onclick="app.toggleParagraph(${index})">
                             <span class="collapse-icon">${isCollapsed ? '▶' : '▼'}</span>
@@ -615,7 +615,7 @@ class StorylineApp {
                             </span>
                         </div>
                         <div class="paragraph-controls">
-                            <button class="control-btn drag-handle" data-index="${index}" title="Drag to reorder">⋮⋮</button>
+                            <button class="control-btn drag-handle" draggable="true" data-index="${index}" title="Drag to reorder">⋮⋮</button>
                             <div class="paragraph-dropdown">
                                 <button class="control-btn dropdown-toggle" onclick="app.toggleParagraphDropdown(${index})" title="More actions">⋯</button>
                                 <div class="paragraph-dropdown-menu" id="paragraphMenu${index}">
@@ -940,18 +940,40 @@ class StorylineApp {
   }
 
   initDragAndDrop() {
+    const dragHandles = document.querySelectorAll('.drag-handle');
     const paragraphs = document.querySelectorAll('.paragraph-item');
 
+    // Add drag events to drag handles
+    dragHandles.forEach((handle) => {
+      const paragraphIndex = parseInt(handle.getAttribute('data-index'));
+      const paragraphItem = handle.closest('.paragraph-item');
+
+      handle.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', paragraphIndex);
+        paragraphItem.classList.add('dragging');
+        
+        // Prevent default drag image and set custom one
+        const dragImage = paragraphItem.cloneNode(true);
+        dragImage.style.opacity = '0.8';
+        dragImage.style.transform = 'rotate(2deg)';
+        document.body.appendChild(dragImage);
+        e.dataTransfer.setDragImage(dragImage, 0, 0);
+        
+        // Remove the temporary drag image after a short delay
+        setTimeout(() => {
+          if (document.body.contains(dragImage)) {
+            document.body.removeChild(dragImage);
+          }
+        }, 0);
+      });
+
+      handle.addEventListener('dragend', () => {
+        paragraphItem.classList.remove('dragging');
+      });
+    });
+
+    // Add drop zones to paragraph items
     paragraphs.forEach((item, index) => {
-      item.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', index);
-        item.classList.add('dragging');
-      });
-
-      item.addEventListener('dragend', () => {
-        item.classList.remove('dragging');
-      });
-
       item.addEventListener('dragover', (e) => {
         e.preventDefault();
         item.classList.add('drag-over');
@@ -966,7 +988,7 @@ class StorylineApp {
         item.classList.remove('drag-over');
 
         const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
-        const targetIndex = index;
+        const targetIndex = parseInt(item.getAttribute('data-index'));
 
         if (draggedIndex !== targetIndex) {
           this.reorderParagraphs(draggedIndex, targetIndex);

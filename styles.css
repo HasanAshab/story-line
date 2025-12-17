@@ -1357,6 +1357,78 @@ body {
     margin-top: 1rem;
 }
 
+/* Preview Search */
+.preview-search-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.preview-search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.preview-search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    font-size: 1rem;
+    background: white;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.preview-search-input:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.preview-search-input::placeholder {
+    color: #999;
+}
+
+.preview-search-clear {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.preview-search-clear:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+/* Search highlighting */
+.search-highlight {
+    background: #ffeb3b;
+    color: #333;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.preview-paragraph.search-match {
+    border-left: 4px solid #2196F3;
+    background: #f8f9ff;
+    padding-left: 1rem;
+    margin-left: -1rem;
+}
+
 .preview-content {
     font-family: Georgia, 'Times New Roman', serif;
     line-height: 1.8;
@@ -1426,6 +1498,16 @@ body {
     
     .preview-paragraph-number {
         font-size: 1rem;
+    }
+    
+    .preview-search-input {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .preview-search-clear {
+        right: 0.6rem;
+        font-size: 1.1rem;
     }
 }
 
@@ -3179,6 +3261,38 @@ body {
     background: #3e2723;
     border-left-color: #ff8f00;
     box-shadow: 0 0 0 3px rgba(255, 143, 0, 0.2);
+}
+
+/* Dark Theme Preview Search */
+.dark-theme .preview-search-section {
+    border-bottom-color: #404040;
+}
+
+.dark-theme .preview-search-input {
+    background: #2c2c2c;
+    border-color: #404040;
+    color: #e0e0e0;
+}
+
+.dark-theme .preview-search-input:focus {
+    background: #2c2c2c;
+    border-color: #64B5F6;
+    box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.2);
+}
+
+.dark-theme .preview-search-clear:hover {
+    background: #404040;
+    color: #e0e0e0;
+}
+
+.dark-theme .search-highlight {
+    background: #ff8f00;
+    color: #1a1a1a;
+}
+
+.dark-theme .preview-paragraph.search-match {
+    border-left-color: #64B5F6;
+    background: #1e2a3a;
 }
 
 /* Dark Theme Empty States */

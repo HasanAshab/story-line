@@ -74,6 +74,11 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Typography**: Serif fonts and proper spacing for comfortable reading
 - **Structured Display**: Organized presentation with headings and paragraphs
 - **Paragraph Numbers**: Numbered headings for easy navigation and reference
+- **Preview Search**: Search within preview mode to find specific content
+- **Search Filtering**: Shows only paragraphs that match your search query
+- **Text Highlighting**: Exact search matches highlighted with yellow background
+- **Real-time Search**: Instant filtering and highlighting as you type
+- **Search Clearing**: Easy clear button to reset search and show all content
 - **Jump Navigation**: Full jump-to-paragraph functionality works in preview mode
 - **Sticky Navigation**: Jump to top/bottom buttons work seamlessly in preview
 - **Visual Highlighting**: Smooth highlighting and animation when jumping to paragraphs

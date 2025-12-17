@@ -94,6 +94,10 @@ class StorylineApp {
     document.getElementById('paragraphSearchInput').addEventListener('input', (e) => this.handleParagraphSearchDebounced(e.target.value));
     document.getElementById('clearParagraphSearchBtn').addEventListener('click', () => this.clearParagraphSearch());
 
+    // Preview search functionality
+    document.getElementById('previewSearchInput').addEventListener('input', (e) => this.handlePreviewSearchDebounced(e.target.value));
+    document.getElementById('clearPreviewSearchBtn').addEventListener('click', () => this.clearPreviewSearch());
+
     // Notes modal functionality
     document.getElementById('closeNotesBtn').addEventListener('click', () => this.closeNotesModal());
     document.getElementById('notesModal').addEventListener('click', (e) => {
@@ -1847,35 +1851,12 @@ class StorylineApp {
     const progressBtn = document.getElementById('progressBtn');
     const editBtn = document.getElementById('editBtn');
     const progressEditBtn = document.getElementById('progressEditBtn');
-    const contentElement = document.getElementById('previewContent');
 
-    if (!story.paragraphs || story.paragraphs.length === 0) {
-      contentElement.innerHTML = '<div class="preview-empty">No content to preview yet.</div>';
-    } else {
-      let previewHTML = `<div class="preview-title">${this.escapeHtml(story.title || 'Untitled Story')}</div>`;
+    // Clear preview search when entering preview mode
+    this.clearPreviewSearch();
 
-      story.paragraphs.forEach((paragraph, index) => {
-        if (paragraph.content && paragraph.content.trim()) {
-          previewHTML += `<div class="preview-paragraph" id="previewParagraph${index + 1}">`;
-
-          if (paragraph.heading && paragraph.heading.trim()) {
-            previewHTML += `<div class="preview-paragraph-heading">
-              <span class="preview-paragraph-number">${index + 1}.</span> ${this.escapeHtml(paragraph.heading)}
-            </div>`;
-          } else {
-            // Show paragraph number even without heading
-            previewHTML += `<div class="preview-paragraph-heading">
-              <span class="preview-paragraph-number">${index + 1}.</span> ${this.getAutoHeading(paragraph.content)}
-            </div>`;
-          }
-
-          previewHTML += `<div class="preview-paragraph-content">${this.escapeHtml(paragraph.content).replace(/\n/g, '<br>')}</div>`;
-          previewHTML += '</div>';
-        }
-      });
-
-      contentElement.innerHTML = previewHTML;
-    }
+    // Render preview content
+    this.renderPreviewContent();
 
     // Switch to preview mode
     editMode.style.display = 'none';
@@ -2205,6 +2186,162 @@ class StorylineApp {
     if (searchInput && searchInput.value.trim()) {
       this.filterParagraphs(searchInput.value);
     }
+  }
+
+  // Preview search functionality
+  handlePreviewSearchDebounced(searchTerm) {
+    const clearBtn = document.getElementById('clearPreviewSearchBtn');
+    
+    // Show/hide clear button based on search term immediately
+    if (searchTerm.trim()) {
+      clearBtn.style.display = 'block';
+    } else {
+      clearBtn.style.display = 'none';
+    }
+    
+    // Clear any existing timeout
+    if (this.previewSearchTimeout) {
+      clearTimeout(this.previewSearchTimeout);
+    }
+    
+    // Set new timeout for debounced search
+    this.previewSearchTimeout = setTimeout(() => {
+      this.handlePreviewSearch(searchTerm);
+    }, 300);
+  }
+
+  handlePreviewSearch(searchTerm) {
+    const clearBtn = document.getElementById('clearPreviewSearchBtn');
+    
+    // Show/hide clear button based on search term
+    if (searchTerm.trim()) {
+      clearBtn.style.display = 'block';
+    } else {
+      clearBtn.style.display = 'none';
+    }
+    
+    this.filterPreviewParagraphs(searchTerm);
+  }
+
+  clearPreviewSearch() {
+    const searchInput = document.getElementById('previewSearchInput');
+    const clearBtn = document.getElementById('clearPreviewSearchBtn');
+    
+    // Clear any pending search timeout
+    if (this.previewSearchTimeout) {
+      clearTimeout(this.previewSearchTimeout);
+    }
+    
+    searchInput.value = '';
+    clearBtn.style.display = 'none';
+    this.filterPreviewParagraphs('');
+  }
+
+  filterPreviewParagraphs(searchTerm) {
+    const story = this.stories[this.currentStoryId];
+    if (!story || !story.paragraphs) return;
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    const previewContent = document.getElementById('previewContent');
+    
+    if (!searchLower) {
+      // Show all paragraphs without highlighting
+      this.renderPreviewContent();
+      return;
+    }
+
+    // Filter and highlight matching paragraphs
+    let previewHTML = '';
+    let hasMatches = false;
+
+    if (story.title && story.title.trim()) {
+      previewHTML += `<div class="preview-title">${this.escapeHtml(story.title)}</div>`;
+    }
+
+    story.paragraphs.forEach((paragraph, index) => {
+      if (paragraph.content && paragraph.content.trim()) {
+        const headingMatch = paragraph.heading && paragraph.heading.toLowerCase().includes(searchLower);
+        const contentMatch = paragraph.content.toLowerCase().includes(searchLower);
+        
+        if (headingMatch || contentMatch) {
+          hasMatches = true;
+          previewHTML += `<div class="preview-paragraph search-match" id="previewParagraph${index + 1}">`;
+
+          // Render heading with highlighting
+          if (paragraph.heading && paragraph.heading.trim()) {
+            const highlightedHeading = this.highlightSearchTerm(paragraph.heading, searchLower);
+            previewHTML += `<div class="preview-paragraph-heading">
+              <span class="preview-paragraph-number">${index + 1}.</span> ${highlightedHeading}
+            </div>`;
+          } else {
+            const autoHeading = this.getAutoHeading(paragraph.content);
+            const highlightedAutoHeading = this.highlightSearchTerm(autoHeading, searchLower);
+            previewHTML += `<div class="preview-paragraph-heading">
+              <span class="preview-paragraph-number">${index + 1}.</span> ${highlightedAutoHeading}
+            </div>`;
+          }
+
+          // Render content with highlighting
+          const highlightedContent = this.highlightSearchTerm(paragraph.content, searchLower);
+          previewHTML += `<div class="preview-paragraph-content">${highlightedContent.replace(/\n/g, '<br>')}</div>`;
+          previewHTML += '</div>';
+        }
+      }
+    });
+
+    if (!hasMatches) {
+      previewHTML += '<div class="preview-empty">No paragraphs match your search.</div>';
+    }
+
+    previewContent.innerHTML = previewHTML;
+  }
+
+  highlightSearchTerm(text, searchTerm) {
+    if (!text || !searchTerm) return this.escapeHtml(text);
+    
+    const escapedText = this.escapeHtml(text);
+    const regex = new RegExp(`(${this.escapeRegex(searchTerm)})`, 'gi');
+    return escapedText.replace(regex, '<mark class="search-highlight">$1</mark>');
+  }
+
+  escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  renderPreviewContent() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) return;
+
+    let previewHTML = '';
+
+    if (story.title && story.title.trim()) {
+      previewHTML += `<div class="preview-title">${this.escapeHtml(story.title)}</div>`;
+    }
+
+    if (!story.paragraphs || story.paragraphs.length === 0) {
+      previewHTML = '<div class="preview-empty">No content to preview. Add some paragraphs first.</div>';
+    } else {
+      story.paragraphs.forEach((paragraph, index) => {
+        if (paragraph.content && paragraph.content.trim()) {
+          previewHTML += `<div class="preview-paragraph" id="previewParagraph${index + 1}">`;
+
+          if (paragraph.heading && paragraph.heading.trim()) {
+            previewHTML += `<div class="preview-paragraph-heading">
+              <span class="preview-paragraph-number">${index + 1}.</span> ${this.escapeHtml(paragraph.heading)}
+            </div>`;
+          } else {
+            previewHTML += `<div class="preview-paragraph-heading">
+              <span class="preview-paragraph-number">${index + 1}.</span> ${this.getAutoHeading(paragraph.content)}
+            </div>`;
+          }
+
+          previewHTML += `<div class="preview-paragraph-content">${this.escapeHtml(paragraph.content).replace(/\n/g, '<br>')}</div>`;
+          previewHTML += '</div>';
+        }
+      });
+    }
+
+    document.getElementById('previewContent').innerHTML = previewHTML;
   }
 
   // Paragraph dropdown functionality

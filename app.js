@@ -356,11 +356,14 @@ class StorylineApp {
           customModel: '' // for custom mode
         };
       }
-      // Ensure all paragraphs have progress field
+      // Ensure all paragraphs have progress and anchor fields
       if (story.paragraphs) {
         story.paragraphs.forEach(paragraph => {
           if (!paragraph.hasOwnProperty('progress')) {
             paragraph.progress = {};
+          }
+          if (!paragraph.hasOwnProperty('isAnchor')) {
+            paragraph.isAnchor = false;
           }
         });
       }
@@ -604,7 +607,7 @@ class StorylineApp {
                         <div class="paragraph-title" onclick="app.toggleParagraph(${index})">
                             <span class="collapse-icon">${isCollapsed ? '▶' : '▼'}</span>
                             <span class="paragraph-label">
-                                ${isCollapsed ? this.escapeHtml(displayHeading) : `Paragraph ${index + 1}`}
+                                ${paragraph.isAnchor ? '⚓ ' : ''}${isCollapsed ? this.escapeHtml(displayHeading) : `Paragraph ${index + 1}`}
                             </span>
                         </div>
                         <div class="paragraph-controls">
@@ -627,6 +630,9 @@ class StorylineApp {
                                     </button>
                                     <button class="dropdown-item ${paragraph.notes && paragraph.notes.length > 0 ? 'has-notes' : ''}" onclick="app.showParagraphNoteModal(${index}); app.closeParagraphDropdown(${index})">
                                         📝 ${paragraph.notes && paragraph.notes.length > 0 ? 'Edit Notes' : 'Add Notes'}
+                                    </button>
+                                    <button class="dropdown-item anchor-item ${paragraph.isAnchor ? 'is-anchor' : ''}" onclick="app.toggleParagraphAnchor(${index}); app.closeParagraphDropdown(${index})">
+                                        ⚓ ${paragraph.isAnchor ? 'Remove Anchor' : 'Set as Anchor'}
                                     </button>
                                     <div class="dropdown-divider"></div>
                                     <button class="dropdown-item delete-item" onclick="app.deleteParagraph(${index}); app.closeParagraphDropdown(${index})">
@@ -677,7 +683,8 @@ class StorylineApp {
       heading: '',
       content: '',
       collapsed: false,
-      progress: {} // Initialize progress tracking for new paragraphs
+      progress: {}, // Initialize progress tracking for new paragraphs
+      isAnchor: false // Initialize anchor status
     });
 
     story.updatedAt = new Date().toISOString();
@@ -709,7 +716,8 @@ class StorylineApp {
       heading: '',
       content: '',
       collapsed: false,
-      progress: {} // Initialize progress tracking for new paragraphs
+      progress: {}, // Initialize progress tracking for new paragraphs
+      isAnchor: false // Initialize anchor status
     };
 
     story.paragraphs.splice(index + 1, 0, newParagraph);
@@ -799,6 +807,34 @@ class StorylineApp {
       this.triggerAutoSave();
     }
 
+    this.renderParagraphs();
+  }
+
+  toggleParagraphAnchor(index) {
+    // Prevent editing read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      alert('This story is read-only and cannot be edited.');
+      return;
+    }
+    
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[index];
+    
+    if (paragraph.isAnchor) {
+      // Remove anchor from this paragraph
+      paragraph.isAnchor = false;
+    } else {
+      // Remove anchor from any other paragraph first (only one anchor per story)
+      story.paragraphs.forEach(p => {
+        p.isAnchor = false;
+      });
+      
+      // Set this paragraph as anchor
+      paragraph.isAnchor = true;
+    }
+    
+    story.updatedAt = new Date().toISOString();
+    this.triggerAutoSave();
     this.renderParagraphs();
   }
 
@@ -4051,17 +4087,31 @@ class StorylineApp {
     }
 
     const totalParagraphs = story.paragraphs.length;
-    const input = prompt(`Jump to paragraph (1-${totalParagraphs}):`);
+    const anchorParagraph = story.paragraphs.find(p => p.isAnchor);
+    const anchorText = anchorParagraph ? ' or $ for anchor' : '';
+    
+    const input = prompt(`Jump to paragraph (1-${totalParagraphs}${anchorText}):`);
     
     if (input === null) {
       // User cancelled
       return;
     }
     
+    // Handle anchor jump with $ character
+    if (input.trim() === '$') {
+      if (anchorParagraph) {
+        const anchorIndex = story.paragraphs.findIndex(p => p.isAnchor);
+        this.jumpToParagraphByNumber(anchorIndex + 1); // +1 for 1-based indexing
+      } else {
+        alert('No anchor set in this story. Use the ⚓ button in any paragraph\'s menu to set an anchor.');
+      }
+      return;
+    }
+    
     const paragraphNum = parseInt(input);
     
     if (!paragraphNum || isNaN(paragraphNum) || paragraphNum < 1 || paragraphNum > totalParagraphs) {
-      alert(`Please enter a valid paragraph number between 1 and ${totalParagraphs}`);
+      alert(`Please enter a valid paragraph number between 1 and ${totalParagraphs}${anchorText}`);
       return;
     }
     

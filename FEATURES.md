@@ -20,6 +20,9 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Create New Stories**: Start fresh stories with customizable titles
 - **Story List View**: Browse all your stories with previews and metadata
 - **Alphabetical Sorting**: Stories automatically sorted by title in ascending alphabetical order
+- **Duplicate Stories**: Create exact copies of existing stories with "_duplicate" suffix
+- **Complete Duplication**: Copies all paragraphs, notes, headings, and settings
+- **Independent Copies**: Duplicated stories are completely separate from originals
 - **Read-Only Mode**: Mark stories as read-only to prevent accidental editing
 - **Local Read-Only Storage**: Read-only status stored locally, not synced to cloud
 - **Preview-Only Access**: Read-only stories automatically open in preview mode

@@ -402,6 +402,49 @@ class StorylineApp {
     this.renderStoryList();
   }
 
+  duplicateStory(storyId) {
+    const originalStory = this.stories[storyId];
+    if (!originalStory) {
+      alert('Story not found');
+      return;
+    }
+
+    // Generate new ID for the duplicate
+    const newId = this.generateId();
+    const now = new Date().toISOString();
+    
+    // Create duplicate with "_duplicate" suffix
+    const originalTitle = originalStory.title || 'Untitled Story';
+    const duplicateTitle = originalTitle + '_duplicate';
+    
+    // Deep copy the original story
+    const duplicateStory = {
+      id: newId,
+      title: duplicateTitle,
+      paragraphs: originalStory.paragraphs ? JSON.parse(JSON.stringify(originalStory.paragraphs)) : [],
+      createdAt: now,
+      updatedAt: now,
+      lastSyncAt: null, // Reset sync status for duplicate
+      progressData: originalStory.progressData ? JSON.parse(JSON.stringify(originalStory.progressData)) : {},
+      aiSettings: originalStory.aiSettings ? JSON.parse(JSON.stringify(originalStory.aiSettings)) : {
+        mode: 'smarter',
+        customInstruction: '',
+        apiKeys: [],
+        customModel: ''
+      }
+    };
+
+    // Add the duplicate to stories
+    this.stories[newId] = duplicateStory;
+    this.saveStories();
+    
+    // Refresh the story list
+    this.renderStoryList();
+    
+    // Show success message
+    alert(`Story duplicated successfully!\nOriginal: "${originalTitle}"\nDuplicate: "${duplicateTitle}"`);
+  }
+
   loadThemePreference() {
     const savedTheme = this.storyMeta.theme || 'light';
     this.currentTheme = savedTheme;
@@ -2075,11 +2118,18 @@ class StorylineApp {
         <div class="story-card ${isReadOnly ? 'read-only' : ''}" onclick="app.editStory('${id}')">
           <div class="story-card-header">
             <h3>${this.escapeHtml(story.title || 'Untitled Story')} ${isReadOnly ? '🔒' : ''}</h3>
-            <button class="read-only-toggle ${isReadOnly ? 'active' : ''}" 
-                    onclick="event.stopPropagation(); app.toggleStoryReadOnly('${id}')" 
-                    title="${isReadOnly ? 'Make editable' : 'Make read-only'}">
-              ${isReadOnly ? '🔓' : '🔒'}
-            </button>
+            <div class="story-card-actions">
+              <button class="story-action-btn duplicate-btn" 
+                      onclick="event.stopPropagation(); app.duplicateStory('${id}')" 
+                      title="Duplicate story">
+                📋
+              </button>
+              <button class="read-only-toggle ${isReadOnly ? 'active' : ''}" 
+                      onclick="event.stopPropagation(); app.toggleStoryReadOnly('${id}')" 
+                      title="${isReadOnly ? 'Make editable' : 'Make read-only'}">
+                ${isReadOnly ? '🔓' : '🔒'}
+              </button>
+            </div>
           </div>
           <div class="story-meta">
             ${paragraphCount} paragraph${paragraphCount !== 1 ? 's' : ''} • 

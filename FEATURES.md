@@ -31,6 +31,9 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Delete Stories**: Remove unwanted stories with confirmation
 - **Advanced Copy Options**: Multiple copy formats and ranges (all, top/bottom N, custom range, headings only)
 - **Flexible Export**: Copy paragraphs with or without content, numbered and formatted
+- **Text File Export**: Download complete stories as formatted text files to device
+- **Structured Export Format**: Includes title, dates, numbered paragraphs, headings, and notes
+- **Smart Filename Generation**: Auto-generates filenames with story title and date
 
 ### Paragraph Organization
 - **Add Paragraphs**: Create new story sections with headings and content

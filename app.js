@@ -445,6 +445,92 @@ class StorylineApp {
     alert(`Story duplicated successfully!\nOriginal: "${originalTitle}"\nDuplicate: "${duplicateTitle}"`);
   }
 
+  exportStoryAsText() {
+    const story = this.stories[this.currentStoryId];
+    if (!story) {
+      alert('No story is currently open');
+      return;
+    }
+
+    // Update story data from current form state before export
+    this.updateStoryFromForm();
+
+    // Build the text content
+    let textContent = '';
+    
+    // Add title
+    const title = story.title || 'Untitled Story';
+    textContent += title + '\n';
+    textContent += '='.repeat(title.length) + '\n\n';
+    
+    // Add creation and update dates
+    if (story.createdAt) {
+      textContent += `Created: ${new Date(story.createdAt).toLocaleString()}\n`;
+    }
+    if (story.updatedAt) {
+      textContent += `Last Updated: ${new Date(story.updatedAt).toLocaleString()}\n`;
+    }
+    textContent += '\n';
+
+    // Add paragraphs
+    if (story.paragraphs && story.paragraphs.length > 0) {
+      story.paragraphs.forEach((paragraph, index) => {
+        if (paragraph.content && paragraph.content.trim()) {
+          // Add paragraph number and heading
+          if (paragraph.heading && paragraph.heading.trim()) {
+            textContent += `${index + 1}. ${paragraph.heading}\n`;
+            textContent += '-'.repeat(`${index + 1}. ${paragraph.heading}`.length) + '\n\n';
+          } else {
+            textContent += `Paragraph ${index + 1}\n`;
+            textContent += '-'.repeat(`Paragraph ${index + 1}`.length) + '\n\n';
+          }
+          
+          // Add paragraph content
+          textContent += paragraph.content.trim() + '\n\n';
+          
+          // Add notes if any
+          if (paragraph.notes && paragraph.notes.length > 0) {
+            textContent += 'Notes:\n';
+            paragraph.notes.forEach((note, noteIndex) => {
+              textContent += `  • ${note}\n`;
+            });
+            textContent += '\n';
+          }
+        }
+      });
+    } else {
+      textContent += 'No content available.\n';
+    }
+
+    // Add export timestamp
+    textContent += '\n' + '-'.repeat(50) + '\n';
+    textContent += `Exported from Storyline App on ${new Date().toLocaleString()}\n`;
+
+    // Create and download the file
+    const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create download link
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Generate filename (sanitize title for filename)
+    const sanitizedTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    link.download = `${sanitizedTitle}_${timestamp}.txt`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up
+    URL.revokeObjectURL(url);
+    
+    // Show success message
+    alert(`Story exported successfully as "${link.download}"`);
+  }
+
   loadThemePreference() {
     const savedTheme = this.storyMeta.theme || 'light';
     this.currentTheme = savedTheme;

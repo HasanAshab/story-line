@@ -157,7 +157,18 @@ class StorylineApp {
     // Sticky navigation functionality
     document.getElementById('jumpToTopBtn').addEventListener('click', () => this.jumpToTop());
     document.getElementById('jumpToBottomBtn').addEventListener('click', () => this.jumpToBottom());
-    document.getElementById('stickyNextReviewBtn').addEventListener('click', () => this.jumpToNextReview());
+    
+    // Add event listener for sticky review button with error handling
+    const stickyReviewBtn = document.getElementById('stickyNextReviewBtn');
+    if (stickyReviewBtn) {
+      stickyReviewBtn.addEventListener('click', () => {
+        console.log('Sticky review button clicked');
+        this.jumpToNextReview();
+      });
+      console.log('Sticky review button event listener added');
+    } else {
+      console.error('Sticky review button not found during initialization');
+    }
 
     // Prevent accidental navigation away from the app
     this.setupNavigationWarning();
@@ -4600,19 +4611,64 @@ class StorylineApp {
     const story = this.stories[this.currentStoryId];
     const stickyReviewBtn = document.getElementById('stickyNextReviewBtn');
     
+    console.log('updateStickyReviewButton called', {
+      hasStory: !!story,
+      hasParagraphs: !!(story && story.paragraphs),
+      hasButton: !!stickyReviewBtn,
+      currentStoryId: this.currentStoryId
+    });
+    
     if (!story || !story.paragraphs || !stickyReviewBtn) {
+      console.log('Early return from updateStickyReviewButton');
       return;
     }
 
     // Check if any paragraphs are marked for review
     const hasReviewParagraphs = story.paragraphs.some(paragraph => paragraph.needsReview);
+    const reviewCount = story.paragraphs.filter(paragraph => paragraph.needsReview).length;
+    
+    console.log('Review status:', {
+      hasReviewParagraphs,
+      reviewCount,
+      paragraphsTotal: story.paragraphs.length
+    });
     
     if (hasReviewParagraphs) {
-      stickyReviewBtn.style.display = 'block';
+      stickyReviewBtn.style.display = 'flex';
+      stickyReviewBtn.style.opacity = '1';
+      stickyReviewBtn.style.transform = 'scale(1)';
+      console.log('Showing sticky review button');
     } else {
       stickyReviewBtn.style.display = 'none';
       // Reset review position when no reviews exist
       this.lastJumpedReviewIndex = undefined;
+      console.log('Hiding sticky review button');
+    }
+  }
+
+  // Test function to manually show the review button (for debugging)
+  testShowReviewButton() {
+    const stickyReviewBtn = document.getElementById('stickyNextReviewBtn');
+    const stickyNav = document.getElementById('stickyNavigation');
+    
+    console.log('Test function called', {
+      hasButton: !!stickyReviewBtn,
+      hasNav: !!stickyNav,
+      navDisplay: stickyNav ? stickyNav.style.display : 'N/A',
+      buttonDisplay: stickyReviewBtn ? stickyReviewBtn.style.display : 'N/A'
+    });
+    
+    if (stickyNav) {
+      stickyNav.style.display = 'flex';
+    }
+    
+    if (stickyReviewBtn) {
+      stickyReviewBtn.style.display = 'flex';
+      stickyReviewBtn.style.opacity = '1';
+      stickyReviewBtn.style.transform = 'scale(1)';
+      stickyReviewBtn.style.background = '#9c27b0';
+      stickyReviewBtn.style.color = 'white';
+      console.log('Manually showing review button');
     }
   }
 
@@ -4691,6 +4747,7 @@ class StorylineApp {
       // Initial update of button visibility
       setTimeout(() => {
         this.updateStickyButtonsVisibility();
+        this.updateStickyReviewButton();
       }, 100);
     }
   }

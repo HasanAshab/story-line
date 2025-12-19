@@ -2473,12 +2473,13 @@ body {
 }
 
 .sticky-btn.review-btn {
-    background: #9c27b0;
-    color: white;
+    background: #9c27b0 !important;
+    color: white !important;
+    border: 2px solid #7b1fa2 !important;
 }
 
 .sticky-btn.review-btn:hover {
-    background: #7b1fa2;
+    background: #7b1fa2 !important;
     transform: translateY(-2px) scale(1.05);
 }
 

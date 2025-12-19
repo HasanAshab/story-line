@@ -1153,6 +1153,15 @@ body {
     font-weight: 600;
 }
 
+.dropdown-item.review-item {
+    color: #9c27b0;
+}
+
+.dropdown-item.review-item.is-review {
+    color: #7b1fa2;
+    font-weight: 600;
+}
+
 .dropdown-item.delete-item {
     color: #dc3545;
 }
@@ -3167,6 +3176,15 @@ body {
 
 .dark-theme .dropdown-item.anchor-item.is-anchor {
     color: #FF9800;
+    font-weight: 600;
+}
+
+.dark-theme .dropdown-item.review-item {
+    color: #CE93D8;
+}
+
+.dark-theme .dropdown-item.review-item.is-review {
+    color: #BA68C8;
     font-weight: 600;
 }
 

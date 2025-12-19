@@ -48,6 +48,7 @@ class StorylineApp {
     document.getElementById('previewBtn').addEventListener('click', () => this.showPreview());
     document.getElementById('editBtn').addEventListener('click', () => this.showEdit());
     document.getElementById('jumpToParagraphBtn').addEventListener('click', () => this.showJumpToParagraphModal());
+    document.getElementById('jumpToNextReviewBtn').addEventListener('click', () => this.jumpToNextReview());
     
     // Advanced dropdown functionality
     document.getElementById('advancedBtn').addEventListener('click', (e) => {
@@ -360,7 +361,7 @@ class StorylineApp {
           customModel: '' // for custom mode
         };
       }
-      // Ensure all paragraphs have progress and anchor fields
+      // Ensure all paragraphs have progress, anchor, and review fields
       if (story.paragraphs) {
         story.paragraphs.forEach(paragraph => {
           if (!paragraph.hasOwnProperty('progress')) {
@@ -368,6 +369,9 @@ class StorylineApp {
           }
           if (!paragraph.hasOwnProperty('isAnchor')) {
             paragraph.isAnchor = false;
+          }
+          if (!paragraph.hasOwnProperty('needsReview')) {
+            paragraph.needsReview = false;
           }
         });
       }
@@ -740,7 +744,7 @@ class StorylineApp {
                         <div class="paragraph-title" onclick="app.toggleParagraph(${index})">
                             <span class="collapse-icon">${isCollapsed ? '▶' : '▼'}</span>
                             <span class="paragraph-label">
-                                ${paragraph.isAnchor ? '⚓ ' : ''}${isCollapsed ? this.escapeHtml(displayHeading) : `Paragraph ${index + 1}`}
+                                ${paragraph.isAnchor ? '⚓ ' : ''}${paragraph.needsReview ? '🔍 ' : ''}${isCollapsed ? this.escapeHtml(displayHeading) : `Paragraph ${index + 1}`}
                             </span>
                         </div>
                         <div class="paragraph-controls">
@@ -766,6 +770,9 @@ class StorylineApp {
                                     </button>
                                     <button class="dropdown-item anchor-item ${paragraph.isAnchor ? 'is-anchor' : ''}" onclick="app.toggleParagraphAnchor(${index}); app.closeParagraphDropdown(${index})">
                                         ⚓ ${paragraph.isAnchor ? 'Remove Anchor' : 'Set as Anchor'}
+                                    </button>
+                                    <button class="dropdown-item review-item ${paragraph.needsReview ? 'is-review' : ''}" onclick="app.toggleParagraphReview(${index}); app.closeParagraphDropdown(${index})">
+                                        🔍 ${paragraph.needsReview ? 'Unmark Review' : 'Mark for Review'}
                                     </button>
                                     <div class="dropdown-divider"></div>
                                     <button class="dropdown-item delete-item" onclick="app.deleteParagraph(${index}); app.closeParagraphDropdown(${index})">
@@ -817,7 +824,8 @@ class StorylineApp {
       content: '',
       collapsed: false,
       progress: {}, // Initialize progress tracking for new paragraphs
-      isAnchor: false // Initialize anchor status
+      isAnchor: false, // Initialize anchor status
+      needsReview: false // Initialize review status
     });
 
     story.updatedAt = new Date().toISOString();
@@ -850,7 +858,8 @@ class StorylineApp {
       content: '',
       collapsed: false,
       progress: {}, // Initialize progress tracking for new paragraphs
-      isAnchor: false // Initialize anchor status
+      isAnchor: false, // Initialize anchor status
+      needsReview: false // Initialize review status
     };
 
     story.paragraphs.splice(index + 1, 0, newParagraph);
@@ -965,6 +974,24 @@ class StorylineApp {
       // Set this paragraph as anchor
       paragraph.isAnchor = true;
     }
+    
+    story.updatedAt = new Date().toISOString();
+    this.triggerAutoSave();
+    this.renderParagraphs();
+  }
+
+  toggleParagraphReview(index) {
+    // Prevent editing read-only stories
+    if (this.isStoryReadOnly(this.currentStoryId)) {
+      alert('This story is read-only and cannot be edited.');
+      return;
+    }
+    
+    const story = this.stories[this.currentStoryId];
+    const paragraph = story.paragraphs[index];
+    
+    // Toggle review status (multiple paragraphs can be marked for review)
+    paragraph.needsReview = !paragraph.needsReview;
     
     story.updatedAt = new Date().toISOString();
     this.triggerAutoSave();
@@ -4044,7 +4071,7 @@ class StorylineApp {
         .sort((a, b) => a.id.localeCompare(b.id));
 
       select.innerHTML = '<option value="">Select a model...</option>';
-      
+
       models.forEach(model => {
         const option = document.createElement('option');
         option.value = model.id;
@@ -4508,6 +4535,64 @@ class StorylineApp {
     if (story.paragraphs[paragraphIndex].collapsed) {
       this.toggleParagraph(paragraphIndex, false); // Don't save, just expand
     }
+  }
+
+  jumpToNextReview() {
+    const story = this.stories[this.currentStoryId];
+    if (!story || !story.paragraphs || story.paragraphs.length === 0) {
+      alert('No paragraphs available');
+      return;
+    }
+
+    // Find paragraphs marked for review
+    const reviewParagraphs = [];
+    story.paragraphs.forEach((paragraph, index) => {
+      if (paragraph.needsReview) {
+        reviewParagraphs.push(index);
+      }
+    });
+
+    if (reviewParagraphs.length === 0) {
+      alert('No paragraphs marked for review. Use the 🔍 "Mark for Review" option in any paragraph\'s menu.');
+      return;
+    }
+
+    // Find current paragraph position
+    let currentIndex = -1;
+    const paragraphItems = document.querySelectorAll('.paragraph-item');
+    
+    // Try to find the currently visible/focused paragraph
+    for (let item of paragraphItems) {
+      const rect = item.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      
+      // Check if paragraph is in the upper half of viewport
+      if (rect.top >= 0 && rect.top <= viewportHeight / 2) {
+        currentIndex = parseInt(item.getAttribute('data-index'));
+        break;
+      }
+    }
+
+    // Find next review paragraph after current position
+    let nextReviewIndex = -1;
+    for (let reviewIndex of reviewParagraphs) {
+      if (reviewIndex > currentIndex) {
+        nextReviewIndex = reviewIndex;
+        break;
+      }
+    }
+
+    // If no next review found, wrap to first review paragraph
+    if (nextReviewIndex === -1) {
+      nextReviewIndex = reviewParagraphs[0];
+      if (nextReviewIndex === currentIndex) {
+        alert('You are already at the only paragraph marked for review.');
+        return;
+      }
+    }
+
+    // Jump to the next review paragraph
+    this.jumpToParagraphByNumber(nextReviewIndex + 1); // +1 for 1-based indexing
   }
 
   // Sticky Navigation functionality

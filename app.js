@@ -157,6 +157,7 @@ class StorylineApp {
     // Sticky navigation functionality
     document.getElementById('jumpToTopBtn').addEventListener('click', () => this.jumpToTop());
     document.getElementById('jumpToBottomBtn').addEventListener('click', () => this.jumpToBottom());
+    document.getElementById('stickyNextReviewBtn').addEventListener('click', () => this.jumpToNextReview());
 
     // Prevent accidental navigation away from the app
     this.setupNavigationWarning();
@@ -806,6 +807,7 @@ class StorylineApp {
     // Update sticky button visibility after rendering
     setTimeout(() => {
       this.updateStickyButtonsVisibility();
+      this.updateStickyReviewButton();
     }, 100);
   }
 
@@ -993,9 +995,13 @@ class StorylineApp {
     // Toggle review status (multiple paragraphs can be marked for review)
     paragraph.needsReview = !paragraph.needsReview;
     
+    // Reset review navigation when review status changes
+    this.lastJumpedReviewIndex = undefined;
+    
     story.updatedAt = new Date().toISOString();
     this.triggerAutoSave();
     this.renderParagraphs();
+    this.updateStickyReviewButton();
   }
 
   saveCurrentStory() {
@@ -4557,42 +4563,57 @@ class StorylineApp {
       return;
     }
 
-    // Find current paragraph position
-    let currentIndex = -1;
-    const paragraphItems = document.querySelectorAll('.paragraph-item');
+    // Initialize or get current review position
+    if (!this.currentReviewPosition) {
+      this.currentReviewPosition = -1;
+    }
+
+    // Find current review paragraph index in the reviewParagraphs array
+    let currentReviewArrayIndex = -1;
+    if (this.lastJumpedReviewIndex !== undefined) {
+      currentReviewArrayIndex = reviewParagraphs.indexOf(this.lastJumpedReviewIndex);
+    }
+
+    // Move to next review paragraph
+    let nextReviewArrayIndex = currentReviewArrayIndex + 1;
     
-    // Try to find the currently visible/focused paragraph
-    for (let item of paragraphItems) {
-      const rect = item.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      
-      // Check if paragraph is in the upper half of viewport
-      if (rect.top >= 0 && rect.top <= viewportHeight / 2) {
-        currentIndex = parseInt(item.getAttribute('data-index'));
-        break;
-      }
+    // Wrap around if we've reached the end
+    if (nextReviewArrayIndex >= reviewParagraphs.length) {
+      nextReviewArrayIndex = 0;
     }
 
-    // Find next review paragraph after current position
-    let nextReviewIndex = -1;
-    for (let reviewIndex of reviewParagraphs) {
-      if (reviewIndex > currentIndex) {
-        nextReviewIndex = reviewIndex;
-        break;
-      }
-    }
-
-    // If no next review found, wrap to first review paragraph
-    if (nextReviewIndex === -1) {
-      nextReviewIndex = reviewParagraphs[0];
-      if (nextReviewIndex === currentIndex) {
-        alert('You are already at the only paragraph marked for review.');
-        return;
-      }
-    }
+    const nextReviewIndex = reviewParagraphs[nextReviewArrayIndex];
+    
+    // Store the current review index for next iteration
+    this.lastJumpedReviewIndex = nextReviewIndex;
 
     // Jump to the next review paragraph
     this.jumpToParagraphByNumber(nextReviewIndex + 1); // +1 for 1-based indexing
+    
+    // Show progress feedback
+    const reviewCount = reviewParagraphs.length;
+    const currentPosition = nextReviewArrayIndex + 1;
+    console.log(`Jumping to review ${currentPosition} of ${reviewCount}`);
+  }
+
+  updateStickyReviewButton() {
+    const story = this.stories[this.currentStoryId];
+    const stickyReviewBtn = document.getElementById('stickyNextReviewBtn');
+    
+    if (!story || !story.paragraphs || !stickyReviewBtn) {
+      return;
+    }
+
+    // Check if any paragraphs are marked for review
+    const hasReviewParagraphs = story.paragraphs.some(paragraph => paragraph.needsReview);
+    
+    if (hasReviewParagraphs) {
+      stickyReviewBtn.style.display = 'block';
+    } else {
+      stickyReviewBtn.style.display = 'none';
+      // Reset review position when no reviews exist
+      this.lastJumpedReviewIndex = undefined;
+    }
   }
 
   // Sticky Navigation functionality

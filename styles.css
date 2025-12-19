@@ -2472,6 +2472,16 @@ body {
     transform: scale(0.95);
 }
 
+.sticky-btn.review-btn {
+    background: #9c27b0;
+    color: white;
+}
+
+.sticky-btn.review-btn:hover {
+    background: #7b1fa2;
+    transform: translateY(-2px) scale(1.05);
+}
+
 /* Paragraph highlighting for jump */
 .paragraph-item.jump-highlight {
     background: #fff3cd;
@@ -3357,6 +3367,17 @@ body {
 .dark-theme .sticky-btn:hover {
     background: #4a4a4a;
     border-color: #666;
+}
+
+.dark-theme .sticky-btn.review-btn {
+    background: #CE93D8;
+    color: #1a1a1a;
+    border-color: #BA68C8;
+}
+
+.dark-theme .sticky-btn.review-btn:hover {
+    background: #BA68C8;
+    border-color: #9C27B0;
 }
 
 /* Dark Theme Highlights */

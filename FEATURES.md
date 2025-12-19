@@ -55,6 +55,8 @@ Storyline is a Progressive Web App (PWA) designed for writers to create, organiz
 - **Visual Anchor Indicators**: Anchored paragraphs display ⚓ icon for easy identification
 - **Review Marking**: Mark multiple paragraphs for review with unlimited marking
 - **Review Navigation**: Jump to next review-marked paragraph with dedicated button
+- **Sticky Review Button**: Dedicated floating 🔍 button appears when reviews exist
+- **Smart Review Cycling**: Properly cycles through all review paragraphs in sequence
 - **Visual Review Indicators**: Review-marked paragraphs display 🔍 icon for easy identification
 - **Universal Navigation**: Jump functionality works in both edit and preview modes
 - **Smart Sticky Navigation**: Context-aware floating buttons that appear only when needed based on scroll position
